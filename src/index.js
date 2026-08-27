@@ -16,6 +16,9 @@ function cors(env, extra = {}) {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Club-Key",
     "Access-Control-Max-Age": "86400",
+    // Sin esto el navegador aplica cache heuristica a las respuestas de la API
+    // y puedes acabar mirando el resultado de un despliegue anterior.
+    "Cache-Control": "no-store, max-age=0",
     ...extra,
   };
 }
@@ -38,19 +41,26 @@ function authorized(request, env) {
   return false;
 }
 
-// Modelos a probar, en orden. El primero que conteste gana.
-// OJO con los alias tipo "gemini-flash-latest": apuntan al Flash mas potente,
-// que razona sin limite y puede tardar minutos en una pregunta de reglas. Para
-// esto interesa un modelo rapido y predecible. Consulta los que tienes
-// disponibles en /api/diag?k=TU_CLAVE.
-const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+// Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
+// /api/health y /api/diag, si lo que hay desplegado es lo que crees.
+const VERSION = 4;
 
-// Techo de razonamiento. Suficiente para encadenar reglas, no tanto como para
-// que se quede dando vueltas. Ponlo a 0 para desactivarlo del todo.
+// Modelos a probar, en orden. El primero que conteste gana.
+// Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
+// de /api/diag puede incluir modelos que devuelven 404 al usarlos. Si eso pasa,
+// el propio error de Google te dice cual es el sustituto.
+const MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite"];
+
+// Techo de razonamiento. Sin el, los modelos Flash potentes se ponen a pensar
+// sin limite y la peticion muere por tiempo de espera.
+// La generacion 2.5 lo expresa en tokens (thinkingBudget) y la 3 en niveles
+// (thinkingLevel), asi que probamos ambos y, si ninguno cuela, vamos sin techo.
 const THINKING_BUDGET = 1024;
+const THINKING_LEVEL = "low";
+const THINKING_MODES = ["budget", "level", "none"];
 
 // Cortamos nosotros antes de que lo haga Cloudflare con un 524 sin explicacion.
-const TIMEOUT_MS = 45000;
+const TIMEOUT_MS = 30000;
 
 const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
 
@@ -62,16 +72,20 @@ function fail(message, { status, detail, retryable = false } = {}) {
   return e;
 }
 
-/** Una sola llamada a un modelo concreto. */
-async function attempt(env, model, system, contents, thinking) {
+/** Una sola llamada a un modelo concreto, con un modo de razonamiento dado. */
+async function attempt(env, model, system, contents, modeIndex = 0) {
+  const mode = THINKING_MODES[modeIndex];
+
   const generationConfig = {
     temperature: 0.15,
     maxOutputTokens: 8192,
     responseMimeType: "application/json",
     responseSchema: RESPONSE_SCHEMA,
   };
-  if (thinking && THINKING_BUDGET > 0) {
+  if (mode === "budget" && THINKING_BUDGET > 0) {
     generationConfig.thinkingConfig = { thinkingBudget: THINKING_BUDGET };
+  } else if (mode === "level") {
+    generationConfig.thinkingConfig = { thinkingLevel: THINKING_LEVEL };
   }
 
   let res;
@@ -89,7 +103,7 @@ async function attempt(env, model, system, contents, thinking) {
   } catch (e) {
     throw fail("timeout", {
       status: 504,
-      detail: `${model}: sin respuesta en ${TIMEOUT_MS / 1000}s`,
+      detail: `${model} (${mode}): sin respuesta en ${TIMEOUT_MS / 1000}s`,
       retryable: true,
     });
   }
@@ -103,13 +117,18 @@ async function attempt(env, model, system, contents, thinking) {
     } catch {
       /* la respuesta no era JSON */
     }
-    // Algunos modelos no aceptan thinkingConfig: reintentamos sin el.
-    if (res.status === 400 && thinking && /thinking|thought/i.test(msg)) {
-      return attempt(env, model, system, contents, false);
+    // Este modelo no entiende esta forma de acotar el razonamiento: pasamos a
+    // la siguiente de la cascada (budget -> level -> sin techo).
+    if (
+      res.status === 400 &&
+      modeIndex < THINKING_MODES.length - 1 &&
+      /thinking|thought/i.test(msg)
+    ) {
+      return attempt(env, model, system, contents, modeIndex + 1);
     }
     throw fail(`HTTP ${res.status}`, {
       status: res.status,
-      detail: `${model}: HTTP ${res.status} — ${msg}`,
+      detail: `${model} (${mode}): HTTP ${res.status} — ${msg}`,
       // Cambiar de modelo solo ayuda si el problema es del modelo o de su cuota
       retryable: res.status === 404 || res.status === 429 || res.status >= 500,
     });
@@ -121,7 +140,7 @@ async function attempt(env, model, system, contents, thinking) {
   } catch {
     throw fail("ilegible", {
       status: 502,
-      detail: `${model}: respuesta no JSON — ${raw.slice(0, 200)}`,
+      detail: `${model} (${mode}): respuesta no JSON — ${raw.slice(0, 200)}`,
       retryable: true,
     });
   }
@@ -135,7 +154,7 @@ async function attempt(env, model, system, contents, thinking) {
     throw fail("vacia", {
       status: 502,
       detail:
-        `${model}: sin texto. finishReason=${reason}. ` +
+        `${model} (${mode}): sin texto. finishReason=${reason}. ` +
         `Tokens entrada=${u.promptTokenCount ?? "?"} salida=${u.candidatesTokenCount ?? "?"}` +
         (u.thoughtsTokenCount ? ` razonamiento=${u.thoughtsTokenCount}` : "") +
         (reason === "MAX_TOKENS" ? ". Sube maxOutputTokens en src/index.js." : ""),
@@ -144,11 +163,11 @@ async function attempt(env, model, system, contents, thinking) {
   }
 
   try {
-    return { answer: JSON.parse(text), model };
+    return { answer: JSON.parse(text), model, thinking: mode };
   } catch {
     throw fail("esquema", {
       status: 502,
-      detail: `${model}: no ha respetado el esquema — ${text.slice(0, 200)}`,
+      detail: `${model} (${mode}): no ha respetado el esquema — ${text.slice(0, 200)}`,
       retryable: true,
     });
   }
@@ -168,7 +187,7 @@ async function callGemini(env, { system, contents }) {
   let ultimo;
   for (const model of MODELS) {
     try {
-      return await attempt(env, model, system, contents, true);
+      return await attempt(env, model, system, contents);
     } catch (e) {
       problemas.push(e.detail);
       ultimo = e;
@@ -289,7 +308,7 @@ export default {
     }
 
     if (url.pathname === "/api/health") {
-      return json(env, { ok: true, reglas: rulesMeta(), modelos: MODELS });
+      return json(env, { ok: true, version: VERSION, reglas: rulesMeta(), modelos: MODELS });
     }
 
     if (!authorized(request, env)) {
@@ -300,7 +319,11 @@ export default {
     // Dice si la clave de Gemini existe, que modelos ve y que contesta el
     // modelo configurado a una peticion minima.
     if (url.pathname === "/api/diag") {
-      const out = { modelos_configurados: MODELS, tiene_clave_gemini: !!env.GEMINI_API_KEY };
+      const out = {
+        version: VERSION,
+        modelos_configurados: MODELS,
+        tiene_clave_gemini: !!env.GEMINI_API_KEY,
+      };
       if (!env.GEMINI_API_KEY) {
         out.problema =
           "Falta GEMINI_API_KEY. Panel de Cloudflare > tu Worker > Settings > " +
@@ -329,6 +352,7 @@ export default {
         });
         out.prueba_de_llamada = "OK";
         out.modelo_que_respondio = r.model;
+        out.modo_de_razonamiento = r.thinking;
         out.tardo_ms = Date.now() - t0;
       } catch (e) {
         out.prueba_de_llamada = "FALLA";

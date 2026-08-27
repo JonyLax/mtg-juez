@@ -25,7 +25,22 @@ OUT_PATH = os.path.join(
     "data", "cr.json",
 )
 
-UA = "mtg-juez-builder/1.0 (proyecto privado de reglas)"
+UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+)
+
+# OJO: Wizards publica el enlace con un espacio literal en el nombre del
+# fichero ("MagicCompRules 20260819.txt"), no con %20. A veces aparece
+# codificado y a veces no, segun como sirvan el HTML. Aceptamos las dos formas
+# y reconstruimos la URL bien codificada.
+RE_TXT = re.compile(
+    r"media\.wizards\.com/(\d{4})/downloads/MagicCompRules(?:%20|\+|\s)?(\d{8})\.txt",
+    re.I,
+)
+
+# Si la web cambia de forma y el scraping falla, esto al menos arranca.
+FALLBACK_TXT = "https://media.wizards.com/2026/downloads/MagicCompRules%2020260819.txt"
 
 # 100.1.  -> regla        100.1a -> subregla        100. -> cabecera de seccion
 RE_RULE = re.compile(r"^(\d{3}\.\d+[a-z]?)\.?\s+(\S.*)$")
@@ -35,7 +50,9 @@ RE_EFFECTIVE = re.compile(r"effective as of ([A-Za-z]+ \d{1,2}, \d{4})")
 
 
 def fetch(url):
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
+    req = urllib.request.Request(
+        url, headers={"User-Agent": UA, "Accept": "*/*", "Accept-Language": "en-US,en;q=0.9"}
+    )
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
 
@@ -45,20 +62,25 @@ def find_txt_url():
     try:
         html = fetch(RULES_PAGE).decode("utf-8", "replace")
     except Exception as e:
-        raise SystemExit(
-            f"No he podido leer {RULES_PAGE} ({e}).\n"
-            "Pasa el enlace a mano con --url o descarga el .txt y usa --file."
-        )
-    hits = re.findall(
-        r"https://media\.wizards\.com/\d{4}/downloads/[^\"'\s<>]+\.txt", html
-    )
+        print(f"No he podido leer {RULES_PAGE}: {e}", file=sys.stderr)
+        print(f"Tiro del enlace de reserva: {FALLBACK_TXT}", file=sys.stderr)
+        return FALLBACK_TXT
+
+    hits = RE_TXT.findall(html)
     if not hits:
-        raise SystemExit(
-            "La pagina de reglas no expone el .txt en el HTML (puede cargarlo por JS).\n"
-            "Abre https://magic.wizards.com/en/rules, copia el enlace TXT y usa --url."
+        # Diagnostico util en el log de GitHub Actions
+        print(f"He leido {len(html)} caracteres de la pagina de reglas.", file=sys.stderr)
+        print(
+            f"Menciones a 'MagicCompRules': {html.count('MagicCompRules')}", file=sys.stderr
         )
-    # El mas reciente por fecha en el nombre del fichero
-    return sorted(set(hits))[-1]
+        for m in re.finditer(r"[^\"'<>]*MagicCompRules[^\"'<>]*", html):
+            print(f"  candidato: {m.group(0)[:160]}", file=sys.stderr)
+        print(f"No reconozco ningun .txt. Tiro del enlace de reserva.", file=sys.stderr)
+        return FALLBACK_TXT
+
+    # El mas reciente por la fecha del nombre, y reconstruido bien codificado
+    year, date = sorted(hits, key=lambda h: h[1])[-1]
+    return f"https://media.wizards.com/{year}/downloads/MagicCompRules%20{date}.txt"
 
 
 def decode(raw):
@@ -189,8 +211,11 @@ def main():
             raw = f.read()
     else:
         source = args.url or find_txt_url()
+        # Por si el usuario pega el enlace con el espacio literal tal cual
+        source = source.replace(" ", "%20")
         print(f"Descargando {source}")
         raw = fetch(source)
+        print(f"Descargados {len(raw) / 1024:.0f} KB")
 
     lines = clean_lines(decode(raw))
 

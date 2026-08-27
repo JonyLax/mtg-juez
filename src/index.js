@@ -1,6 +1,7 @@
 import { retrieve, rulesMeta } from "./retrieval.js";
 import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
+import { manejarAuth, usuarioActual } from "./auth.js";
 
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;
@@ -30,7 +31,9 @@ const json = (env, body, status = 200) =>
   });
 
 function authorized(request, env) {
-  if (!env.CLUB_KEY) return true; // sin secreto configurado, modo abierto
+  // Sin CLUB_KEY el Worker queda abierto a proposito: el control de acceso lo
+  // hace Cloudflare Access por delante, verificando el correo del jugador.
+  if (!env.CLUB_KEY) return true;
   if (request.headers.get("X-Club-Key") === env.CLUB_KEY) return true;
   // Las rutas de diagnostico se abren a mano en el navegador, que no puede
   // mandar cabeceras: para esas admitimos la clave como ?k=
@@ -43,7 +46,7 @@ function authorized(request, env) {
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 6;
+const VERSION = 8;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -307,8 +310,25 @@ export default {
       return new Response(null, { status: 204, headers: cors(env) });
     }
 
+    // Registro, verificación, sesión y contraseñas
+    if (url.pathname.startsWith("/api/auth/")) {
+      try {
+        return await manejarAuth(request, env, url);
+      } catch (e) {
+        return json(env, { error: "Error en la autenticación.", detail: String(e).slice(0, 300) }, 500);
+      }
+    }
+
     if (url.pathname === "/api/health") {
-      return json(env, { ok: true, version: VERSION, reglas: rulesMeta(), modelos: MODELS });
+      const sesion = env.DB ? await usuarioActual(request, env) : null;
+      return json(env, {
+        ok: true,
+        version: VERSION,
+        cuentas: !!env.DB,
+        usuario: sesion?.username || null,
+        reglas: rulesMeta(),
+        modelos: MODELS,
+      });
     }
 
     if (!authorized(request, env)) {
@@ -373,6 +393,13 @@ export default {
 
     if (url.pathname === "/api/ask" && request.method === "POST") {
       try {
+        // Con base de datos configurada, hay que haber iniciado sesión
+        if (env.DB) {
+          const usuario = await usuarioActual(request, env);
+          if (!usuario) {
+            return json(env, { error: "Tu sesión ha caducado. Vuelve a entrar.", codigo: "sin-sesion" }, 401);
+          }
+        }
         return await ask(request, env);
       } catch (e) {
         return json(env, { error: "Error interno.", detail: String(e).slice(0, 300) }, 500);

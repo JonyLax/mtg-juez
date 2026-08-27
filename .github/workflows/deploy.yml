@@ -11,8 +11,9 @@ on:
   schedule:
     - cron: "0 7 * * 1"
 
+# Solo lectura: este workflow ya no escribe en el repositorio.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: deploy
@@ -28,21 +29,12 @@ jobs:
         with:
           python-version: "3.12"
 
+      # data/cr.json se genera aqui en cada ejecucion y viaja dentro del bundle
+      # del Worker. No se commitea: el fichero lleva la fecha de generacion, asi
+      # que cambiaria en cada run y los commits automaticos acabarian pisandose
+      # entre ellos. La version desplegada se consulta en /api/health.
       - name: Descargar y trocear las Comprehensive Rules
         run: python tools/build_rules.py
-
-      - name: Guardar las reglas si han cambiado
-        run: |
-          if git diff --quiet -- data/cr.json; then
-            echo "Las reglas siguen igual."
-          else
-            python -c "import json;m=json.load(open('data/cr.json'))['meta'];print('Version vigente desde',m['effective'],'-',m['rule_count'],'reglas')"
-            git config user.name "github-actions"
-            git config user.email "github-actions@users.noreply.github.com"
-            git add data/cr.json
-            git commit -m "Reglas actualizadas [skip ci]"
-            git push
-          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -53,5 +45,38 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
+          # GitHub guarda los secretos tal cual: si al copiarlos se cuela un
+          # espacio o un salto de linea, viaja hasta aqui. Los recortamos.
+          CLEAN_ID="$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
+          CLEAN_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
+
+          echo "Account ID: ${#CLEAN_ID} caracteres. Token: ${#CLEAN_TOKEN} caracteres."
+
+          if [ -z "$CLEAN_ID" ]; then
+            echo "::error::Falta el secreto CLOUDFLARE_ACCOUNT_ID en el repositorio."
+            exit 1
+          fi
+          # Esto es lo unico que Cloudflare rechaza de plano.
+          if ! printf '%s' "$CLEAN_ID" | grep -qE '^[A-Za-z0-9_-]+$'; then
+            echo "::error::El Account ID tiene caracteres que Cloudflare no acepta."
+            echo "Solo admite letras, numeros, guiones y guiones bajos."
+            echo "Sacalo de la barra de direcciones del panel de Cloudflare:"
+            echo "  https://dash.cloudflare.com/ESTO_DE_AQUI/workers"
+            exit 1
+          fi
+          # Los IDs reales son 32 caracteres hexadecimales. Si no lo parece,
+          # avisamos pero seguimos: mas vale intentarlo que bloquear sin motivo.
+          if ! printf '%s' "$CLEAN_ID" | grep -qE '^[0-9a-fA-F]{32}$'; then
+            echo "::warning::El Account ID no tiene la pinta habitual (32 hexadecimales)."
+            echo "::warning::Tiene ${#CLEAN_ID} caracteres. Revisa que no sea el token por error."
+          fi
+          if [ -z "$CLEAN_TOKEN" ]; then
+            echo "::error::Falta el secreto CLOUDFLARE_API_TOKEN en el repositorio."
+            exit 1
+          fi
+
+          export CLOUDFLARE_ACCOUNT_ID="$CLEAN_ID"
+          export CLOUDFLARE_API_TOKEN="$CLEAN_TOKEN"
+
           npm install
           npx wrangler deploy

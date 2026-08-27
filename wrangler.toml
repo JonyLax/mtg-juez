@@ -1,0 +1,13 @@
+name = "mtg-juez"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# El Worker sirve la web y la API a la vez. Cloudflare intenta primero servir un
+# fichero estatico de esta carpeta; si la ruta no coincide con ninguno (por
+# ejemplo /api/ask), ejecuta el codigo del Worker.
+[assets]
+directory = "./public"
+
+# Los secretos NO van aqui. Se ponen en el panel de Cloudflare:
+#   GEMINI_API_KEY  clave de Google AI Studio
+#   CLUB_KEY        contrasena compartida del grupo

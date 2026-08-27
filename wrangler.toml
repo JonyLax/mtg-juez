@@ -11,3 +11,8 @@ directory = "./public"
 # Los secretos NO van aqui. Se ponen en el panel de Cloudflare:
 #   GEMINI_API_KEY  clave de Google AI Studio
 #   CLUB_KEY        contrasena compartida del grupo
+
+[[d1_databases]]
+binding = "DB"
+database_name = "juez"
+database_id = "4925068d-13da-44ec-abe6-e4db292ae81b"

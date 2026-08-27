@@ -2,11 +2,6 @@ import { retrieve, rulesMeta } from "./retrieval.js";
 import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
 
-// Alias que apunta siempre al Flash estable mas reciente. Si tu clave no tiene
-// acceso, llama a GET /api/models y pon aqui uno de los ids que te devuelva.
-const MODEL = "gemini-flash-latest";
-const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
-
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;
 
@@ -43,61 +38,92 @@ function authorized(request, env) {
   return false;
 }
 
-async function callGemini(env, { system, contents }) {
-  if (!env.GEMINI_API_KEY) {
-    const err = new Error("sin clave");
-    err.detail =
-      "No hay GEMINI_API_KEY configurada. Panel de Cloudflare > tu Worker > " +
-      "Settings > Variables and Secrets > Add, tipo Secret.";
-    throw err;
+// Modelos a probar, en orden. El primero que conteste gana.
+// OJO con los alias tipo "gemini-flash-latest": apuntan al Flash mas potente,
+// que razona sin limite y puede tardar minutos en una pregunta de reglas. Para
+// esto interesa un modelo rapido y predecible. Consulta los que tienes
+// disponibles en /api/diag?k=TU_CLAVE.
+const MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+
+// Techo de razonamiento. Suficiente para encadenar reglas, no tanto como para
+// que se quede dando vueltas. Ponlo a 0 para desactivarlo del todo.
+const THINKING_BUDGET = 1024;
+
+// Cortamos nosotros antes de que lo haga Cloudflare con un 524 sin explicacion.
+const TIMEOUT_MS = 45000;
+
+const GEMINI = "https://generativelanguage.googleapis.com/v1beta";
+
+function fail(message, { status, detail, retryable = false } = {}) {
+  const e = new Error(message);
+  e.status = status;
+  e.detail = detail || message;
+  e.retryable = retryable;
+  return e;
+}
+
+/** Una sola llamada a un modelo concreto. */
+async function attempt(env, model, system, contents, thinking) {
+  const generationConfig = {
+    temperature: 0.15,
+    maxOutputTokens: 8192,
+    responseMimeType: "application/json",
+    responseSchema: RESPONSE_SCHEMA,
+  };
+  if (thinking && THINKING_BUDGET > 0) {
+    generationConfig.thinkingConfig = { thinkingBudget: THINKING_BUDGET };
   }
 
-  const res = await fetch(
-    `${GEMINI}/models/${MODEL}:generateContent?key=${env.GEMINI_API_KEY}`,
-    {
+  let res;
+  try {
+    res = await fetch(`${GEMINI}/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents,
-        generationConfig: {
-          temperature: 0.15,
-          // Los modelos actuales razonan antes de responder y ese razonamiento
-          // consume presupuesto de salida. Con margen corto se quedan sin
-          // tokens antes de escribir nada y devuelven una respuesta vacia.
-          maxOutputTokens: 8192,
-          responseMimeType: "application/json",
-          responseSchema: RESPONSE_SCHEMA,
-        },
+        generationConfig,
       }),
-    }
-  );
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+  } catch (e) {
+    throw fail("timeout", {
+      status: 504,
+      detail: `${model}: sin respuesta en ${TIMEOUT_MS / 1000}s`,
+      retryable: true,
+    });
+  }
 
   const raw = await res.text();
 
   if (!res.ok) {
-    let msg = raw.slice(0, 400);
+    let msg = raw.slice(0, 300);
     try {
       msg = JSON.parse(raw)?.error?.message || msg;
     } catch {
       /* la respuesta no era JSON */
     }
-    const err = new Error(`Gemini ${res.status}`);
-    err.status = res.status;
-    err.detail = `HTTP ${res.status} — ${msg}`;
-    if (res.status === 404) {
-      err.detail += ` (el modelo "${MODEL}" no existe o tu clave no tiene acceso; mira /api/models)`;
+    // Algunos modelos no aceptan thinkingConfig: reintentamos sin el.
+    if (res.status === 400 && thinking && /thinking|thought/i.test(msg)) {
+      return attempt(env, model, system, contents, false);
     }
-    throw err;
+    throw fail(`HTTP ${res.status}`, {
+      status: res.status,
+      detail: `${model}: HTTP ${res.status} — ${msg}`,
+      // Cambiar de modelo solo ayuda si el problema es del modelo o de su cuota
+      retryable: res.status === 404 || res.status === 429 || res.status >= 500,
+    });
   }
 
   let data;
   try {
     data = JSON.parse(raw);
   } catch {
-    const err = new Error("respuesta ilegible");
-    err.detail = `Gemini no ha devuelto JSON: ${raw.slice(0, 300)}`;
-    throw err;
+    throw fail("ilegible", {
+      status: 502,
+      detail: `${model}: respuesta no JSON — ${raw.slice(0, 200)}`,
+      retryable: true,
+    });
   }
 
   const cand = data.candidates?.[0];
@@ -106,26 +132,53 @@ async function callGemini(env, { system, contents }) {
   if (!text) {
     const reason = cand?.finishReason || data.promptFeedback?.blockReason || "desconocido";
     const u = data.usageMetadata || {};
-    const err = new Error("respuesta vacia");
-    err.detail =
-      `El modelo no ha escrito nada. finishReason=${reason}. ` +
-      `Tokens: entrada=${u.promptTokenCount ?? "?"}, salida=${u.candidatesTokenCount ?? "?"}` +
-      (u.thoughtsTokenCount ? `, razonamiento=${u.thoughtsTokenCount}` : "") +
-      (reason === "MAX_TOKENS"
-        ? ". Sube maxOutputTokens en src/index.js."
-        : reason === "SAFETY"
-          ? ". Un filtro de contenido ha bloqueado la respuesta."
-          : "");
-    throw err;
+    throw fail("vacia", {
+      status: 502,
+      detail:
+        `${model}: sin texto. finishReason=${reason}. ` +
+        `Tokens entrada=${u.promptTokenCount ?? "?"} salida=${u.candidatesTokenCount ?? "?"}` +
+        (u.thoughtsTokenCount ? ` razonamiento=${u.thoughtsTokenCount}` : "") +
+        (reason === "MAX_TOKENS" ? ". Sube maxOutputTokens en src/index.js." : ""),
+      retryable: reason === "MAX_TOKENS",
+    });
   }
 
   try {
-    return JSON.parse(text);
+    return { answer: JSON.parse(text), model };
   } catch {
-    const err = new Error("JSON invalido");
-    err.detail = `El modelo no ha respetado el esquema: ${text.slice(0, 300)}`;
-    throw err;
+    throw fail("esquema", {
+      status: 502,
+      detail: `${model}: no ha respetado el esquema — ${text.slice(0, 200)}`,
+      retryable: true,
+    });
   }
+}
+
+async function callGemini(env, { system, contents }) {
+  if (!env.GEMINI_API_KEY) {
+    throw fail("sin clave", {
+      status: 500,
+      detail:
+        "No hay GEMINI_API_KEY configurada. Panel de Cloudflare > tu Worker > " +
+        "Settings > Variables and Secrets > Add, tipo Secret.",
+    });
+  }
+
+  const problemas = [];
+  let ultimo;
+  for (const model of MODELS) {
+    try {
+      return await attempt(env, model, system, contents, true);
+    } catch (e) {
+      problemas.push(e.detail);
+      ultimo = e;
+      if (!e.retryable) break; // errores de clave o de peticion no mejoran cambiando
+    }
+  }
+  throw fail("gemini", {
+    status: ultimo?.status || 502,
+    detail: problemas.join("  |  "),
+  });
 }
 
 async function ask(request, env) {
@@ -176,15 +229,25 @@ async function ask(request, env) {
   });
 
   // 3. Llamar al modelo
-  let answer;
+  let answer, usedModel;
   try {
-    answer = await callGemini(env, { system, contents });
+    ({ answer, model: usedModel } = await callGemini(env, { system, contents }));
   } catch (e) {
     if (e.status === 429) {
       return json(
         env,
-        { error: "Se ha agotado la cuota del modelo por ahora. Prueba en un minuto." },
+        {
+          error: "Se ha agotado la cuota del modelo por ahora. Prueba en un minuto.",
+          detail: e.detail,
+        },
         429
+      );
+    }
+    if (e.status === 504) {
+      return json(
+        env,
+        { error: "El modelo ha tardado demasiado. Vuelve a intentarlo.", detail: e.detail },
+        504
       );
     }
     return json(env, { error: "El modelo ha fallado.", detail: e.detail || e.message }, 502);
@@ -212,7 +275,7 @@ async function ask(request, env) {
     debug: {
       reglas_recuperadas: context.rules.length,
       ids: context.rules.map((r) => r.id),
-      modelo: MODEL,
+      modelo: usedModel,
     },
   });
 }
@@ -226,7 +289,7 @@ export default {
     }
 
     if (url.pathname === "/api/health") {
-      return json(env, { ok: true, reglas: rulesMeta(), modelo: MODEL });
+      return json(env, { ok: true, reglas: rulesMeta(), modelos: MODELS });
     }
 
     if (!authorized(request, env)) {
@@ -237,7 +300,7 @@ export default {
     // Dice si la clave de Gemini existe, que modelos ve y que contesta el
     // modelo configurado a una peticion minima.
     if (url.pathname === "/api/diag") {
-      const out = { modelo_configurado: MODEL, tiene_clave_gemini: !!env.GEMINI_API_KEY };
+      const out = { modelos_configurados: MODELS, tiene_clave_gemini: !!env.GEMINI_API_KEY };
       if (!env.GEMINI_API_KEY) {
         out.problema =
           "Falta GEMINI_API_KEY. Panel de Cloudflare > tu Worker > Settings > " +
@@ -250,16 +313,23 @@ export default {
         out.modelos_disponibles = (d.models || [])
           .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
           .map((m) => m.name.replace("models/", ""));
-        out.modelo_configurado_disponible = out.modelos_disponibles.includes(MODEL);
+        out.configurados_disponibles = MODELS.filter((m) =>
+          out.modelos_disponibles.includes(m)
+        );
       } catch (e) {
         out.error_listando_modelos = String(e).slice(0, 200);
       }
       try {
-        await callGemini(env, {
-          system: "Responde en JSON segun el esquema.",
-          contents: [{ role: "user", parts: [{ text: "Di hola. Cita [CR 100.1]." }] }],
+        const t0 = Date.now();
+        const r = await callGemini(env, {
+          system: "Eres un juez de Magic. Responde en JSON segun el esquema.",
+          contents: [
+            { role: "user", parts: [{ text: "Saluda en una frase y cita [CR 100.1]." }] },
+          ],
         });
         out.prueba_de_llamada = "OK";
+        out.modelo_que_respondio = r.model;
+        out.tardo_ms = Date.now() - t0;
       } catch (e) {
         out.prueba_de_llamada = "FALLA";
         out.detalle = e.detail || String(e);

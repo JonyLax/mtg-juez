@@ -146,6 +146,11 @@ textarea{resize:vertical; min-height:70px}
 @keyframes blink{0%{content:"·"}33%{content:"··"}66%{content:"···"}}
 @media (prefers-reduced-motion:reduce){ .thinking::after{content:"···"; animation:none} }
 .err{color:var(--warn); font-size:14px}
+.detail{
+  font-family:var(--mono); font-size:12px; color:var(--soft);
+  background:var(--card); border:1px solid var(--line); border-radius:4px;
+  padding:8px 10px; margin-top:8px; white-space:pre-wrap; word-break:break-word;
+}
 
 /* ---- barra de escritura ---- */
 .composer{
@@ -413,7 +418,9 @@ async function send(text) {
     const data = await res.json();
 
     if (!res.ok) {
-      pending.innerHTML = `<div class="err">${esc(data.error || "Algo ha fallado.")}</div>`;
+      pending.innerHTML =
+        `<div class="err">${esc(data.error || "Algo ha fallado.")}</div>` +
+        (data.detail ? `<div class="detail">${esc(data.detail)}</div>` : "");
     } else {
       renderJudge(pending, data);
       S.history.push({ role: "tu", text });

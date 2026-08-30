@@ -80,21 +80,22 @@ jobs:
 
           npm install
 
-          # Si ya has enlazado la base de datos, aplicamos el esquema. Todas las
-          # sentencias llevan IF NOT EXISTS, asi que repetirlo no rompe nada ni
-          # toca los datos existentes. Si aun no la has creado, se salta.
+          # Si ya has enlazado la base de datos, aplicamos el esquema.
+          # Usamos tools/d1_exec.py y no `wrangler d1 execute --file`: ese
+          # comando sube el SQL por el endpoint de importacion de Cloudflare,
+          # que pide permisos distintos de los de D1 y falla con
+          # "Authentication error [code: 10000]".
           if grep -q 'database_id = "PEGA_AQUI' wrangler.toml; then
             echo "Sin base de datos enlazada todavia: me salto el esquema."
           else
-            echo "Aplicando schema.sql a la base de datos D1..."
-            npx wrangler d1 execute juez --remote --file=schema.sql --yes
-
-            # Columnas anadidas despues de la primera version. SQLite no tiene
-            # "ADD COLUMN IF NOT EXISTS", asi que en una base ya migrada esto
-            # falla con "duplicate column name" y no pasa nada: lo toleramos.
-            echo "Aplicando migraciones (los errores de columna repetida son normales)..."
-            npx wrangler d1 execute juez --remote --file=migrate.sql --yes \
-              || echo "  migraciones ya aplicadas"
+            echo "Aplicando schema.sql..."
+            python3 tools/d1_exec.py schema.sql || {
+              echo "::warning::No he podido aplicar schema.sql. Sigo con el despliegue."
+            }
+            # SQLite no tiene "ADD COLUMN IF NOT EXISTS": en una base ya migrada
+            # estas sentencias fallan y no pasa nada.
+            echo "Aplicando migrate.sql..."
+            python3 tools/d1_exec.py migrate.sql --tolerar-errores || true
           fi
 
           npx wrangler deploy

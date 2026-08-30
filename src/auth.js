@@ -1,4 +1,4 @@
-import { enviarVerificacion, enviarRestablecimiento } from "./mail.js";
+import { enviarVerificacion, enviarRestablecimiento, enviarCambioCorreo } from "./mail.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POR QUÉ LAS CONTRASEÑAS SE ESTIRAN EN EL NAVEGADOR
@@ -159,13 +159,13 @@ function proximoCambio(u) {
 }
 
 // ── enlaces de un solo uso ───────────────────────────────────────────────────
-async function crearToken(env, userId, kind, horas) {
+async function crearToken(env, userId, kind, horas, payload = null) {
   const token = aleatorio(32);
   await env.DB.prepare("DELETE FROM tokens WHERE user_id = ? AND kind = ?")
     .bind(userId, kind).run();
   await env.DB.prepare(
-    "INSERT INTO tokens (hash, user_id, kind, expires_at) VALUES (?, ?, ?, ?)"
-  ).bind(await sha256hex(token), userId, kind, ahora() + horas * 3600).run();
+    "INSERT INTO tokens (hash, user_id, kind, expires_at, payload) VALUES (?, ?, ?, ?, ?)"
+  ).bind(await sha256hex(token), userId, kind, ahora() + horas * 3600, payload).run();
   return token;
 }
 
@@ -173,11 +173,11 @@ async function consumirToken(env, token, kind) {
   if (typeof token !== "string" || !/^[0-9a-f]{64}$/.test(token)) return null;
   const h = await sha256hex(token);
   const fila = await env.DB.prepare(
-    "SELECT user_id, expires_at, used FROM tokens WHERE hash = ? AND kind = ?"
+    "SELECT user_id, expires_at, used, payload FROM tokens WHERE hash = ? AND kind = ?"
   ).bind(h, kind).first();
   if (!fila || fila.used || fila.expires_at < ahora()) return null;
   await env.DB.prepare("DELETE FROM tokens WHERE hash = ?").bind(h).run();
-  return fila.user_id;
+  return { userId: fila.user_id, payload: fila.payload };
 }
 
 // ── respuestas ───────────────────────────────────────────────────────────────
@@ -265,6 +265,100 @@ export async function manejarAuth(request, env, url) {
       username: nuevo,
       puede_cambiar_usuario_el: t + DIAS_CAMBIO_USUARIO * 86400,
     });
+  }
+
+  // ── ajustes: cambiar la contraseña ─────────────────────────────────────────
+  if (ruta === "password" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+
+    const actual = String(cuerpo.dk_actual || "");
+    const salt = String(cuerpo.salt || "");
+    const dk = String(cuerpo.dk || "");
+    if (!RE_DK.test(actual)) return json({ error: "Falta la contraseña actual." }, 400);
+    if (!RE_SAL.test(salt) || !RE_DK.test(dk)) {
+      return json({ error: "La contraseña nueva no se ha preparado bien. Recarga la página." }, 400);
+    }
+    if (!(await permitido(env, `pass:${u.id}`, 5, 900))) {
+      return json({ error: "Demasiados intentos. Espera un cuarto de hora." }, 429);
+    }
+
+    const fila = await env.DB.prepare("SELECT salt, pass_hash FROM users WHERE id = ?")
+      .bind(u.id).first();
+    if (!fila || !igual(await hashDeServidor(env, actual, fila.salt), fila.pass_hash)) {
+      return json({ error: "La contraseña actual no es correcta." }, 401);
+    }
+
+    await env.DB.prepare(
+      "UPDATE users SET salt = ?, pass_hash = ?, kdf_iterations = ? WHERE id = ?"
+    ).bind(salt, await hashDeServidor(env, dk, salt), Number(cuerpo.iterations) || KDF_ITERATIONS, u.id).run();
+
+    // Cierra las sesiones de otros dispositivos, pero deja abierta esta.
+    const actualHash = await sha256hex(leerCookie(request) || "");
+    await env.DB.prepare("DELETE FROM sessions WHERE user_id = ? AND hash != ?")
+      .bind(u.id, actualHash).run();
+
+    return json({ ok: true });
+  }
+
+  // ── ajustes: cambiar el correo ─────────────────────────────────────────────
+  // El enlace de confirmación va a la dirección ACTUAL, no a la nueva: así,
+  // si alguien te pilla la sesión abierta, no puede llevarse la cuenta a un
+  // correo suyo sin que tú lo veas.
+  if (ruta === "email" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+
+    const nuevo = String(cuerpo.email || "").trim();
+    const dk = String(cuerpo.dk || "");
+    if (!RE_MAIL.test(nuevo)) return json({ error: "Ese correo no tiene buena pinta." }, 400);
+    if (nuevo.toLowerCase() === u.email.toLowerCase()) {
+      return json({ error: "Ese ya es tu correo." }, 400);
+    }
+    if (!RE_DK.test(dk)) return json({ error: "Falta la contraseña." }, 400);
+    if (!(await permitido(env, `mail:${u.id}`, 5, 3600))) {
+      return json({ error: "Demasiados intentos. Prueba dentro de un rato." }, 429);
+    }
+
+    const fila = await env.DB.prepare("SELECT salt, pass_hash FROM users WHERE id = ?")
+      .bind(u.id).first();
+    if (!fila || !igual(await hashDeServidor(env, dk, fila.salt), fila.pass_hash)) {
+      return json({ error: "La contraseña no es correcta." }, 401);
+    }
+
+    const cogido = await env.DB.prepare("SELECT id FROM users WHERE email_lc = ?")
+      .bind(nuevo.toLowerCase()).first();
+    // Mismo criterio que en el registro: no decimos si ese correo tiene cuenta.
+    if (!cogido) {
+      try {
+        const t = await crearToken(env, u.id, "email", RESET_HOURS, nuevo);
+        await enviarCambioCorreo(env, {
+          to: u.email,
+          username: u.username,
+          nuevo,
+          enlace: `${baseUrl(request)}/api/auth/confirm-email?token=${t}`,
+        });
+      } catch (e) {
+        return json({ error: "No he podido enviar el correo.", detail: String(e).slice(0, 200) }, 502);
+      }
+    }
+    return json({ ok: true, mensaje: "revisa-tu-correo-actual" });
+  }
+
+  // ── confirmación del cambio de correo ──────────────────────────────────────
+  if (ruta === "confirm-email" && request.method === "GET") {
+    const t = await consumirToken(env, url.searchParams.get("token"), "email");
+    if (!t?.userId || !t.payload) {
+      return Response.redirect(`${baseUrl(request)}/?aviso=enlace-caducado`, 302);
+    }
+    const cogido = await env.DB.prepare("SELECT id FROM users WHERE email_lc = ?")
+      .bind(t.payload.toLowerCase()).first();
+    if (cogido) {
+      return Response.redirect(`${baseUrl(request)}/?aviso=correo-ocupado`, 302);
+    }
+    await env.DB.prepare("UPDATE users SET email = ?, email_lc = ? WHERE id = ?")
+      .bind(t.payload, t.payload.toLowerCase(), t.userId).run();
+    return Response.redirect(`${baseUrl(request)}/?aviso=correo-cambiado`, 302);
   }
 
   // ── ajustes: dar de baja la cuenta ─────────────────────────────────────────
@@ -383,7 +477,8 @@ export async function manejarAuth(request, env, url) {
 
   // ── confirmación del correo (se abre desde el enlace) ──────────────────────
   if (ruta === "verify" && request.method === "GET") {
-    const userId = await consumirToken(env, url.searchParams.get("token"), "verify");
+    const t = await consumirToken(env, url.searchParams.get("token"), "verify");
+    const userId = t?.userId;
     if (!userId) {
       return Response.redirect(`${baseUrl(request)}/?aviso=enlace-caducado`, 302);
     }
@@ -488,7 +583,8 @@ export async function manejarAuth(request, env, url) {
     if (!RE_SAL.test(salt) || !RE_DK.test(dk)) {
       return json({ error: "La contraseña no se ha preparado bien en el navegador. Recarga la página." }, 400);
     }
-    const userId = await consumirToken(env, cuerpo.token, "reset");
+    const t = await consumirToken(env, cuerpo.token, "reset");
+    const userId = t?.userId;
     if (!userId) return json({ error: "Ese enlace ya no vale. Pide otro." }, 400);
 
     const pass_hash = await hashDeServidor(env, dk, salt);

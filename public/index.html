@@ -280,6 +280,49 @@ button.cite:hover,button.cite[aria-expanded="true"]{
   white-space:pre-wrap; word-break:break-word;
 }
 
+/* ── autocompletado de cartas ───────────────────────────── */
+.sugerencias{
+  position:absolute; bottom:calc(100% + 6px); left:0; right:0; z-index:20;
+  background:linear-gradient(var(--frame-hi),var(--frame-lo));
+  border:1px solid var(--edge); border-radius:8px; padding:5px;
+  box-shadow:0 0 0 1px rgba(235,215,155,.26) inset, 0 -8px 24px rgba(0,0,0,.55);
+  max-height:246px; overflow-y:auto;
+}
+.sug{
+  display:flex; align-items:baseline; gap:9px; width:100%; text-align:left;
+  background:none; border:none; border-radius:4px; padding:8px 11px;
+  color:var(--parch); font-size:14.5px;
+}
+.sug:hover,.sug[aria-selected="true"]{background:rgba(201,162,39,.18)}
+.sug b{font-weight:500}
+.sug em{font-style:italic; font-size:12px; color:#9C8E74; margin-left:auto; text-align:right}
+
+/* ── ajustes ────────────────────────────────────────────── */
+.ajustes{max-width:440px; margin:0 auto}
+.bloque{
+  border:1px solid rgba(201,162,39,.3); border-radius:8px;
+  padding:17px 18px; margin-bottom:16px;
+}
+.bloque h2{
+  font-family:var(--display); font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--gold); margin:0 0 12px; font-weight:600;
+}
+.bloque p{font-size:13.5px; color:#9C8E74; margin:0 0 13px; font-style:italic}
+.bloque.peligro{border-color:rgba(138,52,25,.55)}
+.bloque.peligro h2{color:#C4674A}
+.secundario{
+  width:100%; background:none; border:1px solid var(--gold-lo); border-radius:5px;
+  padding:11px; color:var(--gold);
+  font-family:var(--display); font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.secundario:hover{background:rgba(201,162,39,.1)}
+.peligroso{
+  width:100%; background:none; border:1px solid var(--alert); border-radius:5px;
+  padding:11px; color:#C4674A;
+  font-family:var(--display); font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.peligroso:hover{background:rgba(138,52,25,.14)}
+
 /* ── barra de escritura ─────────────────────────────────── */
 .composer{
   position:sticky; bottom:0;
@@ -288,7 +331,7 @@ button.cite:hover,button.cite[aria-expanded="true"]{
   box-shadow:0 -1px 0 rgba(235,215,155,.14), 0 -10px 24px rgba(0,0,0,.55);
   padding:11px max(14px,env(safe-area-inset-left)) max(11px,env(safe-area-inset-bottom));
 }
-.composer-inner{max-width:680px; margin:0 auto; display:flex; gap:9px; align-items:flex-end}
+.composer-inner{max-width:680px; margin:0 auto; display:flex; gap:9px; align-items:flex-end; position:relative}
 .composer textarea{min-height:46px; max-height:160px; overflow-y:hidden; line-height:1.45}
 .send{
   border:1px solid var(--edge); border-radius:5px; padding:0 20px; height:46px;
@@ -336,6 +379,7 @@ footer{
     <span class="ctx-label" id="ctxLabel"></span>
     <button class="linkbtn hidden" id="btnNew">Nueva consulta</button>
     <button class="linkbtn hidden" id="btnChange">Cambiar</button>
+    <button class="linkbtn hidden" id="btnAjustes">Ajustes</button>
     <button class="linkbtn hidden" id="btnSalir">Salir</button>
   </div>
 </header>
@@ -412,9 +456,9 @@ footer{
     <label class="field hidden" id="subWrap">
       <span>Formato concreto</span>
       <select id="subformat">
-        <option value="standard">Standard</option>
+        <option value="standard" selected>Standard</option>
         <option value="pioneer">Pioneer</option>
-        <option value="modern" selected>Modern</option>
+        <option value="modern">Modern</option>
         <option value="legacy">Legacy</option>
         <option value="vintage">Vintage</option>
         <option value="pauper">Pauper</option>
@@ -431,6 +475,47 @@ footer{
     <button class="primary" id="btnStart">Empezar</button>
   </section>
 
+  <section id="ajustes" class="ajustes hidden">
+    <h1 class="lede">Ajustes</h1>
+    <p class="sub" id="ajQuien"></p>
+    <div id="ajMsg"></div>
+
+    <div class="bloque">
+      <h2>Idioma de las respuestas</h2>
+      <p>El juez responderá en este idioma aunque preguntes en otro. Las reglas
+         oficiales solo existen en inglés, así que las citas seguirán en inglés.</p>
+      <label class="field"><span>Idioma</span>
+        <select id="ajLang">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="pt">Português</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+        </select></label>
+      <button class="secundario" id="ajGuardarLang">Guardar idioma</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Nombre de usuario</h2>
+      <p id="ajCuandoUsuario"></p>
+      <label class="field"><span>Nuevo nombre</span>
+        <input type="text" id="ajUsuario" maxlength="24" autocomplete="username"></label>
+      <button class="secundario" id="ajGuardarUsuario">Cambiar nombre</button>
+    </div>
+
+    <div class="bloque peligro">
+      <h2>Dar de baja la cuenta</h2>
+      <p>Se borra tu usuario, tus sesiones y tus enlaces pendientes. No se puede
+         deshacer y el nombre queda libre para otra persona.</p>
+      <label class="field"><span>Confirma con tu contraseña</span>
+        <input type="password" id="ajPass" autocomplete="current-password"></label>
+      <button class="peligroso" id="ajBorrar">Borrar mi cuenta para siempre</button>
+    </div>
+
+    <div class="switch"><button type="button" id="ajVolver">Volver al juez</button></div>
+  </section>
+
   <section id="chat" class="hidden">
     <div class="log" id="log"></div>
   </section>
@@ -439,6 +524,7 @@ footer{
 <div class="composer hidden" id="composer">
   <div class="composer-inner">
     <textarea id="q" rows="1" placeholder="Escribe la duda. Para citar una carta: [[Lightning Bolt]]"></textarea>
+    <div id="sugerencias"></div>
     <button class="send" id="btnSend">Enviar</button>
   </div>
 </div>
@@ -463,7 +549,7 @@ const SEAL = '<svg class="seal" viewBox="0 0 64 64" aria-hidden="true"><use href
 
 const S = {
   format: localStorage.getItem("mtg.format") || "",
-  subformat: localStorage.getItem("mtg.subformat") || "modern",
+  subformat: localStorage.getItem("mtg.subformat") || "standard",
   houseRules: localStorage.getItem("mtg.house") || "",
   turns: [],
   busy: false,
@@ -518,6 +604,7 @@ function abrirChat() {
   $("composer").classList.remove("hidden");
   $("btnChange").classList.remove("hidden");
   $("btnSalir").classList.remove("hidden");
+  $("btnAjustes").classList.remove("hidden");
   $("btnNew").classList.toggle("hidden", S.turns.length === 0);
   $("ctxLabel").textContent = contextLabel();
 }
@@ -742,8 +829,26 @@ $("houseRules").value = S.houseRules;
 
 $("btnStart").onclick = start;
 $("btnSend").onclick = () => send($("q").value);
-$("q").oninput = autogrow;
+$("q").oninput = () => {
+  autogrow();
+  clearTimeout(sugTemporizador);
+  sugTemporizador = setTimeout(buscarSugerencias, 200);
+};
+$("q").onblur = () => setTimeout(cerrarSugerencias, 120);
 $("q").onkeydown = (e) => {
+  // Con la lista abierta, las flechas y el Enter la manejan a ella
+  if (sugActuales.length) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      sugElegida = (sugElegida + (e.key === "ArrowDown" ? 1 : -1) + sugActuales.length) % sugActuales.length;
+      pintarSugerencias();
+      return;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault(); aceptarSugerencia(sugElegida < 0 ? 0 : sugElegida); return;
+    }
+    if (e.key === "Escape") { e.preventDefault(); cerrarSugerencias(); return; }
+  }
   if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("q").value); }
 };
 $("btnNew").onclick = () => {
@@ -823,7 +928,7 @@ function mostrarAuth(cual, mensaje, clase) {
   $("setup").classList.add("hidden");
   $("chat").classList.add("hidden");
   $("composer").classList.add("hidden");
-  ["btnChange", "btnNew", "btnSalir"].forEach((b) => $(b).classList.add("hidden"));
+  ["btnChange", "btnNew", "btnSalir", "btnAjustes"].forEach((b) => $(b).classList.add("hidden"));
   $("ctxLabel").textContent = "";
 }
 
@@ -842,6 +947,7 @@ async function pedir(ruta, cuerpo) {
 function entrar(usuario) {
   S.usuario = usuario;
   $("auth").classList.add("hidden");
+  $("ajustes").classList.add("hidden");
   $("btnSalir").classList.remove("hidden");
   if (S.format) { abrirChat(); if (S.turns.length) { repintar(); scroll(); } }
   else { $("setup").classList.remove("hidden"); }
@@ -977,6 +1083,150 @@ async function arrancarSesion() {
   const [texto, clase] = avisos[aviso] || [null, null];
   mostrarAuth("login", texto, clase);
 }
+
+// ─── Autocompletado de cartas ─────────────────────────────────────────────────
+// Se dispara al escribir dentro de unos corchetes dobles sin cerrar. Busca en
+// nuestro índice de nombres traducidos (Scryfall solo autocompleta en inglés).
+let sugActuales = [], sugElegida = -1, sugTemporizador = null, sugUltima = "";
+
+/** Si el cursor está dentro de un [[ sin cerrar, devuelve lo escrito. */
+function consultaAbierta() {
+  const t = $("q");
+  const antes = t.value.slice(0, t.selectionStart);
+  const abre = antes.lastIndexOf("[[");
+  if (abre === -1) return null;
+  const trozo = antes.slice(abre + 2);
+  if (trozo.includes("]]") || trozo.includes("\n")) return null;
+  return { desde: abre + 2, texto: trozo };
+}
+
+function cerrarSugerencias() {
+  sugActuales = []; sugElegida = -1;
+  $("sugerencias").innerHTML = "";
+}
+
+function pintarSugerencias() {
+  if (!sugActuales.length) return cerrarSugerencias();
+  $("sugerencias").innerHTML =
+    `<div class="sugerencias" role="listbox">${sugActuales.map((c, i) =>
+      `<button class="sug" type="button" role="option" data-i="${i}"
+               aria-selected="${i === sugElegida}">
+         <b>${esc(c.nombre)}</b>${c.lang !== "en" ? `<em>${esc(c.ingles)}</em>` : ""}
+       </button>`).join("")}</div>`;
+  $("sugerencias").querySelectorAll("[data-i]").forEach((b) => {
+    b.onmousedown = (e) => { e.preventDefault(); aceptarSugerencia(+b.dataset.i); };
+  });
+}
+
+function aceptarSugerencia(i) {
+  const c = sugActuales[i];
+  const abierta = consultaAbierta();
+  if (!c || !abierta) return cerrarSugerencias();
+  const t = $("q");
+  const fin = t.selectionStart;
+  t.value = t.value.slice(0, abierta.desde) + c.nombre + "]] " + t.value.slice(fin);
+  const cursor = abierta.desde + c.nombre.length + 3;
+  t.setSelectionRange(cursor, cursor);
+  cerrarSugerencias();
+  autogrow();
+  t.focus();
+}
+
+async function buscarSugerencias() {
+  const abierta = consultaAbierta();
+  if (!abierta || abierta.texto.trim().length < 2) return cerrarSugerencias();
+  const q = abierta.texto.trim();
+  if (q === sugUltima) return;
+  sugUltima = q;
+  try {
+    const res = await fetch(`${API}/api/cards/suggest?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return cerrarSugerencias();
+    const d = await res.json();
+    // Puede haber llegado tarde: comprobamos que sigue valiendo
+    const ahora = consultaAbierta();
+    if (!ahora || ahora.texto.trim() !== q) return;
+    sugActuales = d.sugerencias || [];
+    sugElegida = sugActuales.length ? 0 : -1;
+    pintarSugerencias();
+  } catch { cerrarSugerencias(); }
+}
+
+// ─── Ajustes ──────────────────────────────────────────────────────────────────
+function ajMensaje(texto, clase = "info") {
+  $("ajMsg").innerHTML = texto ? `<div class="msg ${clase}">${esc(texto)}</div>` : "";
+}
+
+function fecha(ts) {
+  return new Date(ts * 1000).toLocaleDateString("es-ES",
+    { day: "numeric", month: "long", year: "numeric" });
+}
+
+function pintarAjustes() {
+  const u = S.usuario || {};
+  $("ajQuien").textContent = `Sesión de ${u.username || ""} · ${u.email || ""}`;
+  $("ajLang").value = u.lang || "es";
+  $("ajUsuario").value = u.username || "";
+  const proximo = u.puede_cambiar_usuario_el || 0;
+  $("ajCuandoUsuario").textContent = proximo > Date.now() / 1000
+    ? `Ya lo cambiaste hace poco. Podrás volver a hacerlo el ${fecha(proximo)}.`
+    : "Solo se puede cambiar una vez cada 30 días. El nombre que dejes libre podrá cogerlo otra persona.";
+  $("ajGuardarUsuario").disabled = proximo > Date.now() / 1000;
+}
+
+function abrirAjustes() {
+  ajMensaje("");
+  pintarAjustes();
+  $("ajustes").classList.remove("hidden");
+  $("chat").classList.add("hidden");
+  $("setup").classList.add("hidden");
+  $("composer").classList.add("hidden");
+  ["btnChange", "btnNew", "btnAjustes"].forEach((b) => $(b).classList.add("hidden"));
+}
+
+function cerrarAjustes() {
+  $("ajustes").classList.add("hidden");
+  if (S.format) { abrirChat(); } else { $("setup").classList.remove("hidden"); }
+}
+
+$("ajGuardarLang").onclick = async () => {
+  const r = await pedir("lang", { lang: $("ajLang").value });
+  if (r.ok) { S.usuario.lang = r.data.lang; ajMensaje("Idioma guardado.", "bien"); }
+  else ajMensaje(r.data.error || "No he podido guardarlo.", "mal");
+};
+
+$("ajGuardarUsuario").onclick = async () => {
+  const nuevo = $("ajUsuario").value.trim();
+  if (!nuevo) return;
+  const r = await pedir("username", { username: nuevo });
+  if (r.ok) {
+    S.usuario.username = r.data.username;
+    S.usuario.puede_cambiar_usuario_el = r.data.puede_cambiar_usuario_el;
+    pintarAjustes();
+    ajMensaje("Nombre cambiado.", "bien");
+  } else ajMensaje(r.data.error || "No he podido cambiarlo.", "mal");
+};
+
+$("ajBorrar").onclick = async () => {
+  const pass = $("ajPass").value;
+  if (!pass) return ajMensaje("Escribe tu contraseña para confirmar.", "mal");
+  if (!confirm("¿Seguro? Se borrará tu cuenta y no se puede deshacer.")) return;
+  ajMensaje("Comprobando la contraseña…");
+  try {
+    const sal = await pedir("salt", { login: S.usuario.username });
+    const dk = await derivar(pass, sal.data.salt, sal.data.iterations || KDF_DEFAULT);
+    const r = await pedir("delete", { dk });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido borrarla.", "mal");
+    localStorage.removeItem("mtg.turns");
+    S.turns = []; S.usuario = null;
+    $("log").innerHTML = "";
+    $("ajustes").classList.add("hidden");
+    $("ajPass").value = "";
+    mostrarAuth("login", "Tu cuenta ha sido borrada.", "info");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+$("ajVolver").onclick = cerrarAjustes;
+$("btnAjustes").onclick = abrirAjustes;
 
 // ─── Instalación ──────────────────────────────────────────────────────────────
 let promptInstalar = null;

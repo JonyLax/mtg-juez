@@ -400,7 +400,7 @@ footer{
       <button class="primary" type="submit">Entrar</button>
       <div class="switch">
         <button type="button" id="irOlvide">He olvidado mi contraseña</button><br>
-        ¿No tienes cuenta? <button type="button" id="irRegistro">Crear una</button>
+        ¿No tienes cuenta? <button type="button" id="irRegistro">Crear una cuenta</button>
       </div>
     </form>
 
@@ -502,6 +502,30 @@ footer{
       <label class="field"><span>Nuevo nombre</span>
         <input type="text" id="ajUsuario" maxlength="24" autocomplete="username"></label>
       <button class="secundario" id="ajGuardarUsuario">Cambiar nombre</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Contraseña</h2>
+      <p>Al cambiarla se cierran las sesiones de tus otros dispositivos. Esta se queda abierta.</p>
+      <label class="field"><span>Contraseña actual</span>
+        <input type="password" id="ajPassVieja" autocomplete="current-password"></label>
+      <label class="field"><span>Contraseña nueva</span>
+        <input type="password" id="ajPassNueva" autocomplete="new-password" minlength="10"></label>
+      <label class="field"><span>Repite la nueva</span>
+        <input type="password" id="ajPassNueva2" autocomplete="new-password" minlength="10"></label>
+      <button class="secundario" id="ajGuardarPass">Cambiar contraseña</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Correo electrónico</h2>
+      <p>El enlace de confirmación llega a tu dirección <strong>actual</strong>, no a la nueva.
+         Así nadie puede llevarse tu cuenta a otro correo sin que te enteres.
+         Revisa bien la dirección nueva antes de enviar.</p>
+      <label class="field"><span>Correo nuevo</span>
+        <input type="email" id="ajMail" autocomplete="email"></label>
+      <label class="field"><span>Confirma con tu contraseña</span>
+        <input type="password" id="ajMailPass" autocomplete="current-password"></label>
+      <button class="secundario" id="ajGuardarMail">Cambiar correo</button>
     </div>
 
     <div class="bloque peligro">
@@ -1069,18 +1093,22 @@ async function arrancarSesion() {
 
   if (aviso) history.replaceState(null, "", location.pathname);
 
+  const avisos = {
+    "cuenta-confirmada": ["Correo confirmado. Ya puedes entrar.", "bien"],
+    "enlace-caducado": ["Ese enlace ya no vale. Pide otro.", "mal"],
+    "correo-cambiado": ["Correo cambiado. A partir de ahora entra con el nuevo.", "bien"],
+    "correo-ocupado": ["No he podido cambiarlo: esa dirección ya está en uso.", "mal"],
+  };
+  const [texto, clase] = avisos[aviso] || [null, null];
+
   const res = await fetch(`${API}/api/auth/me`).catch(() => null);
   if (res && res.ok) {
     const d = await res.json();
     entrar(d.usuario);
+    if (texto) { abrirAjustes(); ajMensaje(texto, clase); }
     return;
   }
 
-  const avisos = {
-    "cuenta-confirmada": ["Correo confirmado. Ya puedes entrar.", "bien"],
-    "enlace-caducado": ["Ese enlace de confirmación ya no vale. Vuelve a registrarte o pide otro.", "mal"],
-  };
-  const [texto, clase] = avisos[aviso] || [null, null];
   mostrarAuth("login", texto, clase);
 }
 
@@ -1222,6 +1250,45 @@ $("ajBorrar").onclick = async () => {
     $("ajustes").classList.add("hidden");
     $("ajPass").value = "";
     mostrarAuth("login", "Tu cuenta ha sido borrada.", "info");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+/** Deriva una contraseña con la sal actual del usuario, para comprobarla. */
+async function derivarConSalActual(pass) {
+  const sal = await pedir("salt", { login: S.usuario.username });
+  return derivar(pass, sal.data.salt, sal.data.iterations || KDF_DEFAULT);
+}
+
+$("ajGuardarPass").onclick = async () => {
+  const vieja = $("ajPassVieja").value;
+  const nueva = $("ajPassNueva").value;
+  if (!vieja || !nueva) return ajMensaje("Rellena las tres casillas.", "mal");
+  if (nueva !== $("ajPassNueva2").value) return ajMensaje("Las dos contraseñas nuevas no coinciden.", "mal");
+  if (nueva.length < MIN_PASS) return ajMensaje(`La contraseña necesita al menos ${MIN_PASS} caracteres.`, "mal");
+  if (nueva === vieja) return ajMensaje("La nueva es igual que la actual.", "mal");
+  ajMensaje("Cifrando…");
+  try {
+    const dk_actual = await derivarConSalActual(vieja);
+    const salt = salAleatoria();
+    const dk = await derivar(nueva, salt, KDF_DEFAULT);
+    const r = await pedir("password", { dk_actual, salt, dk, iterations: KDF_DEFAULT });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido cambiarla.", "mal");
+    $("ajPassVieja").value = $("ajPassNueva").value = $("ajPassNueva2").value = "";
+    ajMensaje("Contraseña cambiada. Las sesiones de tus otros dispositivos se han cerrado.", "bien");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+$("ajGuardarMail").onclick = async () => {
+  const email = $("ajMail").value.trim();
+  const pass = $("ajMailPass").value;
+  if (!email || !pass) return ajMensaje("Rellena el correo y la contraseña.", "mal");
+  ajMensaje("Cifrando…");
+  try {
+    const dk = await derivarConSalActual(pass);
+    const r = await pedir("email", { email, dk });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido cambiarlo.", "mal");
+    $("ajMail").value = $("ajMailPass").value = "";
+    ajMensaje(`Te he escrito a ${S.usuario.email}, tu dirección actual. Pulsa el enlace para confirmar el cambio.`, "bien");
   } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
 };
 

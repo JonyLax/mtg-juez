@@ -45,8 +45,18 @@ export const FORMATS = {
   },
 };
 
-export function systemPrompt({ format, houseRules, legalityKey, crEffective }) {
+export const IDIOMAS = {
+  es: "castellano",
+  en: "English",
+  pt: "português",
+  fr: "français",
+  de: "Deutsch",
+  it: "italiano",
+};
+
+export function systemPrompt({ format, houseRules, legalityKey, crEffective, lang }) {
   const f = FORMATS[format] || FORMATS.duel;
+  const idioma = IDIOMAS[lang] || IDIOMAS.es;
 
   return `Eres un juez de Magic: The Gathering. Resuelves dudas de reglas para un grupo de amigos que esta jugando ahora mismo, asi que respondes rapido y sin rodeos.
 
@@ -64,8 +74,8 @@ COMO TRABAJAS
 4. Si te falta un dato para responder bien (que criatura entro antes, quien controla que, si ya se habia lanzado el comandante), NO adivines: devuelve tipo "clarificacion" con 2 a 4 opciones concretas y excluyentes.
 5. Si las reglas que tienes delante no cubren el caso, dilo claramente y pon confianza "baja". Es mucho mejor que inventar.
 6. Explica el porque, no solo el resultado. Cuando el orden importe (pila, capas, acciones basadas en el estado), enumera los pasos.
-7. Escribes en castellano, en segunda persona, tono de colega que sabe de esto. Sin florituras ni disculpas.
-8. ORTOGRAFIA: escribes con tildes y enes correctas (daño, más, resolución, criatura pequeña, cuántos). Estas instrucciones van sin tildes por motivos tecnicos del sistema: NO imites esa carencia en tus respuestas.
+7. IDIOMA: escribes SIEMPRE en ${idioma}, sea cual sea el idioma de la pregunta. Segunda persona, tono de colega que sabe de esto. Sin florituras ni disculpas.
+8. ORTOGRAFIA: escribes con la ortografia correcta del idioma, con sus tildes y signos (daño, más, resolución). Estas instrucciones van sin tildes por motivos tecnicos del sistema: NO imites esa carencia en tus respuestas.
 
 CONFIANZA
 - alta: las reglas del contexto responden el caso de forma directa.

@@ -58,6 +58,20 @@ def lotes(items):
         yield actual
 
 
+def leer_json(respuesta_bytes, status=None):
+    """La API puede devolver HTML si hay un proxy o un corte por medio."""
+    try:
+        return json.loads(respuesta_bytes or b"{}")
+    except json.JSONDecodeError:
+        texto = (respuesta_bytes or b"").decode("utf-8", "replace").strip()
+        return {
+            "success": False,
+            "errors": [{"message":
+                        f"respuesta no JSON{f' (HTTP {status})' if status else ''}: "
+                        f"{texto[:200] or 'vacia'}"}],
+        }
+
+
 def ejecutar(cuenta, token, db, sql):
     url = f"https://api.cloudflare.com/client/v4/accounts/{cuenta}/d1/database/{db}/query"
     datos = json.dumps({"sql": sql}).encode()
@@ -69,9 +83,9 @@ def ejecutar(cuenta, token, db, sql):
     )
     try:
         with urllib.request.urlopen(req, timeout=90) as r:
-            cuerpo = json.loads(r.read())
+            cuerpo = leer_json(r.read(), r.status)
     except urllib.error.HTTPError as e:
-        cuerpo = json.loads(e.read() or b"{}")
+        cuerpo = leer_json(e.read(), e.code)
     except Exception as e:
         return False, str(e)
 
@@ -79,6 +93,49 @@ def ejecutar(cuenta, token, db, sql):
         return True, ""
     errores = cuerpo.get("errors") or []
     return False, "; ".join(str(x.get("message", x)) for x in errores) or "error desconocido"
+
+
+def comprobar_acceso(cuenta, token, db):
+    """
+    Antes de tocar nada, comprobamos que el token puede ver las bases de datos.
+    Sin esto, un problema de permisos aparece como cientos de errores idénticos
+    en cada sentencia y no se entiende nada.
+    """
+    url = f"https://api.cloudflare.com/client/v4/accounts/{cuenta}/d1/database"
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            cuerpo = leer_json(r.read(), r.status)
+    except urllib.error.HTTPError as e:
+        cuerpo = leer_json(e.read(), e.code)
+    except Exception as e:
+        raise SystemExit(f"No he podido contactar con la API de Cloudflare: {e}")
+
+    if not cuerpo.get("success"):
+        errores = "; ".join(str(x.get("message", x)) for x in cuerpo.get("errors") or [])
+        print("\n" + "=" * 70, file=sys.stderr)
+        print("EL TOKEN DE CLOUDFLARE NO PUEDE ACCEDER A D1", file=sys.stderr)
+        print("=" * 70, file=sys.stderr)
+        print(f"Cloudflare dice: {errores}\n", file=sys.stderr)
+        print("Casi siempre es una de estas tres:", file=sys.stderr)
+        print("  1. Al token le falta el permiso 'Account - D1 - Edit'.", file=sys.stderr)
+        print("  2. Lo anadiste pero no pulsaste 'Continue to summary' y luego", file=sys.stderr)
+        print("     'Save' hasta el final, asi que no llego a guardarse.", file=sys.stderr)
+        print("  3. Editaste un token distinto del que esta en el secreto", file=sys.stderr)
+        print("     CLOUDFLARE_API_TOKEN de GitHub.", file=sys.stderr)
+        print("\nLo mas rapido es crear un token nuevo con permisos", file=sys.stderr)
+        print("'Workers Scripts - Edit' y 'D1 - Edit', y actualizar el secreto.", file=sys.stderr)
+        print("=" * 70, file=sys.stderr)
+        raise SystemExit(1)
+
+    bases = cuerpo.get("result") or []
+    nombres = [b.get("name") for b in bases]
+    if not any(b.get("uuid") == db for b in bases):
+        raise SystemExit(
+            f"El token ve estas bases de datos: {nombres or 'ninguna'}, pero no la del "
+            f"identificador {db} que hay en wrangler.toml. Revisa que sea el correcto."
+        )
+    print(f"Token correcto. Base de datos encontrada entre {len(bases)}: {nombres}")
 
 
 def main():
@@ -94,6 +151,8 @@ def main():
         raise SystemExit("Faltan CLOUDFLARE_ACCOUNT_ID o CLOUDFLARE_API_TOKEN.")
 
     db = id_base_datos()
+    comprobar_acceso(cuenta, token, db)
+
     todas = list(sentencias(args.fichero))
     if not todas:
         raise SystemExit(f"{args.fichero} no tiene ninguna sentencia.")

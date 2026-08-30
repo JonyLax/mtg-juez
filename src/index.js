@@ -2,6 +2,7 @@ import { retrieve, rulesMeta } from "./retrieval.js";
 import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
+import { sugerir } from "./cards.js";
 
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;
@@ -46,7 +47,7 @@ function authorized(request, env) {
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 8;
+const VERSION = 9;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -203,7 +204,7 @@ async function callGemini(env, { system, contents }) {
   });
 }
 
-async function ask(request, env) {
+async function ask(request, env, usuario) {
   const body = await request.json();
   const question = String(body.question || "").slice(0, MAX_QUESTION).trim();
   if (!question) return json(env, { error: "Falta la pregunta." }, 400);
@@ -220,7 +221,7 @@ async function ask(request, env) {
   const names = extractCardNames(question);
   const [context, cards] = await Promise.all([
     Promise.resolve(retrieve(question, format)),
-    names.length ? fetchCards(names, legalityKey) : Promise.resolve([]),
+    names.length ? fetchCards(env, names, legalityKey) : Promise.resolve([]),
   ]);
 
   // 2. Montar el prompt
@@ -229,6 +230,7 @@ async function ask(request, env) {
     houseRules,
     legalityKey,
     crEffective: context.meta.effective,
+    lang: usuario?.lang || "es",
   });
 
   const contents = [];
@@ -391,16 +393,29 @@ export default {
       });
     }
 
+    // Autocompletado de nombres de carta mientras se escribe
+    if (url.pathname === "/api/cards/suggest") {
+      if (env.DB && !(await usuarioActual(request, env))) {
+        return json(env, { error: "Sin sesión." }, 401);
+      }
+      try {
+        return json(env, { sugerencias: await sugerir(env, url.searchParams.get("q")) });
+      } catch (e) {
+        return json(env, { sugerencias: [] });
+      }
+    }
+
     if (url.pathname === "/api/ask" && request.method === "POST") {
       try {
         // Con base de datos configurada, hay que haber iniciado sesión
+        let usuarioSesion = null;
         if (env.DB) {
-          const usuario = await usuarioActual(request, env);
-          if (!usuario) {
+          usuarioSesion = await usuarioActual(request, env);
+          if (!usuarioSesion) {
             return json(env, { error: "Tu sesión ha caducado. Vuelve a entrar.", codigo: "sin-sesion" }, 401);
           }
         }
-        return await ask(request, env);
+        return await ask(request, env, usuarioSesion);
       } catch (e) {
         return json(env, { error: "Error interno.", detail: String(e).slice(0, 300) }, 500);
       }

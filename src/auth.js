@@ -25,6 +25,8 @@ const SESSION_DAYS = 30;
 const VERIFY_HOURS = 24;
 const RESET_HOURS = 1;
 const MIN_PASS = 10; // longitud mínima, se valida también en el navegador
+const DIAS_CAMBIO_USUARIO = 30; // cada cuánto se puede cambiar el nombre
+const IDIOMAS_VALIDOS = ["es", "en", "pt", "fr", "de", "it"];
 
 const enc = new TextEncoder();
 const ahora = () => Math.floor(Date.now() / 1000);
@@ -136,11 +138,24 @@ export async function usuarioActual(request, env) {
   const token = leerCookie(request);
   if (!token) return null;
   const fila = await env.DB.prepare(
-    "SELECT u.id, u.username, u.email, s.expires_at FROM sessions s " +
-    "JOIN users u ON u.id = s.user_id WHERE s.hash = ?"
+    "SELECT u.id, u.username, u.email, u.lang, u.username_changed_at, u.created_at, s.expires_at " +
+    "FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ?"
   ).bind(await sha256hex(token)).first();
   if (!fila || fila.expires_at < ahora()) return null;
-  return { id: fila.id, username: fila.username, email: fila.email };
+  return {
+    id: fila.id,
+    username: fila.username,
+    email: fila.email,
+    lang: fila.lang || "es",
+    username_changed_at: fila.username_changed_at,
+    created_at: fila.created_at,
+  };
+}
+
+/** Momento a partir del cual puede volver a cambiarse el nombre de usuario. */
+function proximoCambio(u) {
+  const ultimo = u.username_changed_at;
+  return ultimo ? ultimo + DIAS_CAMBIO_USUARIO * 86400 : 0;
 }
 
 // ── enlaces de un solo uso ───────────────────────────────────────────────────
@@ -199,7 +214,85 @@ export async function manejarAuth(request, env, url) {
   // ── quién soy ──────────────────────────────────────────────────────────────
   if (ruta === "me") {
     const u = await usuarioActual(request, env);
-    return u ? json({ usuario: u }) : json({ error: "Sin sesión." }, 401);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+    return json({ usuario: { ...u, puede_cambiar_usuario_el: proximoCambio(u) } });
+  }
+
+  // ── ajustes: idioma de las respuestas ──────────────────────────────────────
+  if (ruta === "lang" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+    const lang = String(cuerpo.lang || "");
+    if (!IDIOMAS_VALIDOS.includes(lang)) return json({ error: "Idioma no admitido." }, 400);
+    await env.DB.prepare("UPDATE users SET lang = ? WHERE id = ?").bind(lang, u.id).run();
+    return json({ ok: true, lang });
+  }
+
+  // ── ajustes: cambiar el nombre de usuario ──────────────────────────────────
+  if (ruta === "username" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+
+    const nuevo = String(cuerpo.username || "").trim();
+    if (!RE_USER.test(nuevo)) {
+      return json({ error: "El usuario debe tener entre 3 y 24 caracteres: letras, números, punto, guion o guion bajo." }, 400);
+    }
+    if (nuevo.toLowerCase() === u.username.toLowerCase()) {
+      // Solo cambia de mayúsculas: no gasta el cupo de 30 días
+      await env.DB.prepare("UPDATE users SET username = ? WHERE id = ?").bind(nuevo, u.id).run();
+      return json({ ok: true, username: nuevo, puede_cambiar_usuario_el: proximoCambio(u) });
+    }
+
+    const proximo = proximoCambio(u);
+    if (proximo > ahora()) {
+      return json({
+        error: `Solo puedes cambiar el nombre una vez cada ${DIAS_CAMBIO_USUARIO} días.`,
+        proximo_cambio: proximo,
+      }, 429);
+    }
+
+    const cogido = await env.DB.prepare("SELECT id FROM users WHERE username_lc = ?")
+      .bind(nuevo.toLowerCase()).first();
+    if (cogido) return json({ error: "Ese nombre de usuario ya está cogido." }, 409);
+
+    const t = ahora();
+    await env.DB.prepare(
+      "UPDATE users SET username = ?, username_lc = ?, username_changed_at = ? WHERE id = ?"
+    ).bind(nuevo, nuevo.toLowerCase(), t, u.id).run();
+
+    return json({
+      ok: true,
+      username: nuevo,
+      puede_cambiar_usuario_el: t + DIAS_CAMBIO_USUARIO * 86400,
+    });
+  }
+
+  // ── ajustes: dar de baja la cuenta ─────────────────────────────────────────
+  // Pedimos la contraseña: si alguien te deja la sesión abierta, que no pueda
+  // borrarte la cuenta de un clic.
+  if (ruta === "delete" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+
+    const dk = String(cuerpo.dk || "");
+    if (!RE_DK.test(dk)) return json({ error: "Falta la contraseña." }, 400);
+    if (!(await permitido(env, `del:${u.id}`, 5, 900))) {
+      return json({ error: "Demasiados intentos. Espera un cuarto de hora." }, 429);
+    }
+
+    const fila = await env.DB.prepare("SELECT salt, pass_hash FROM users WHERE id = ?")
+      .bind(u.id).first();
+    if (!fila || !igual(await hashDeServidor(env, dk, fila.salt), fila.pass_hash)) {
+      return json({ error: "La contraseña no es correcta." }, 401);
+    }
+
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(u.id),
+      env.DB.prepare("DELETE FROM tokens WHERE user_id = ?").bind(u.id),
+      env.DB.prepare("DELETE FROM users WHERE id = ?").bind(u.id),
+    ]);
+
+    return json({ ok: true }, 200, { "Set-Cookie": cabeceraCookie("", 0) });
   }
 
   // ── parámetros del estirado, antes de iniciar sesión ───────────────────────
@@ -413,4 +506,4 @@ export async function manejarAuth(request, env, url) {
   return json({ error: "Ruta de autenticación no encontrada." }, 404);
 }
 
-export const AUTH_CONFIG = { KDF_ITERATIONS, MIN_PASS };
+export const AUTH_CONFIG = { KDF_ITERATIONS, MIN_PASS, DIAS_CAMBIO_USUARIO, IDIOMAS_VALIDOS };

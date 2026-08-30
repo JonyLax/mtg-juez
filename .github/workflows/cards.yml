@@ -1,0 +1,36 @@
+name: Reconstruir el indice de nombres de carta
+
+# Este no va en cada despliegue: son unas 200 peticiones a Scryfall y unas
+# 20.000 escrituras en D1. Se lanza a mano cuando sale una coleccion nueva.
+on:
+  workflow_dispatch:
+    inputs:
+      idiomas:
+        description: "Idiomas separados por espacios (es, pt, fr, de, it)"
+        required: true
+        default: "es"
+
+jobs:
+  cards:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Descargar los nombres traducidos de Scryfall
+        run: python tools/build_cards.py ${{ inputs.idiomas }}
+
+      - name: Cargarlos en D1
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$CLOUDFLARE_ACCOUNT_ID" | tr -d '[:space:]')"
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CLOUDFLARE_API_TOKEN" | tr -d '[:space:]')"
+          npm install
+          npx wrangler d1 execute juez --remote --file=cards.sql --yes

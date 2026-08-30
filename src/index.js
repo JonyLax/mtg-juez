@@ -31,23 +31,9 @@ const json = (env, body, status = 200) =>
     headers: cors(env, { "Content-Type": "application/json; charset=utf-8" }),
   });
 
-function authorized(request, env) {
-  // Sin CLUB_KEY el Worker queda abierto a proposito: el control de acceso lo
-  // hace Cloudflare Access por delante, verificando el correo del jugador.
-  if (!env.CLUB_KEY) return true;
-  if (request.headers.get("X-Club-Key") === env.CLUB_KEY) return true;
-  // Las rutas de diagnostico se abren a mano en el navegador, que no puede
-  // mandar cabeceras: para esas admitimos la clave como ?k=
-  const url = new URL(request.url);
-  if (url.pathname.startsWith("/api/diag") || url.pathname.startsWith("/api/models")) {
-    return url.searchParams.get("k") === env.CLUB_KEY;
-  }
-  return false;
-}
-
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 9;
+const VERSION = 10;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -333,13 +319,14 @@ export default {
       });
     }
 
-    if (!authorized(request, env)) {
-      return json(env, { error: "Clave del grupo incorrecta." }, 401);
+    // Diagnostico. Hay que haber iniciado sesion: se abre desde el navegador
+    // con la cookie ya puesta.
+    if (url.pathname === "/api/diag" || url.pathname === "/api/models") {
+      if (env.DB && !(await usuarioActual(request, env))) {
+        return json(env, { error: "Inicia sesion en la app y vuelve a abrir esta direccion." }, 401);
+      }
     }
 
-    // Diagnostico: abre https://TU-URL/api/diag?k=TU_CLAVE en el navegador.
-    // Dice si la clave de Gemini existe, que modelos ve y que contesta el
-    // modelo configurado a una peticion minima.
     if (url.pathname === "/api/diag") {
       const out = {
         version: VERSION,

@@ -85,3 +85,24 @@ export async function enviarRestablecimiento(env, { to, username, enlace }) {
     text: `Hola, ${username}. Para elegir una contraseña nueva: ${enlace}\n\nEl enlace caduca en 1 hora.`,
   });
 }
+
+export async function enviarCambioCorreo(env, { to, username, nuevo, enlace }) {
+  const html = plantilla({
+    titulo: "¿Cambias tu correo?",
+    saludo: `Hola, ${username}.`,
+    cuerpo:
+      `Has pedido cambiar el correo de tu cuenta de Juez a <strong>${nuevo}</strong>. ` +
+      "Confírmalo desde aquí, que es tu dirección actual.",
+    boton: "Sí, cambiar mi correo",
+    enlace,
+    pie:
+      "El enlace caduca en 1 hora. Si no has sido tú, no hagas nada y tu correo seguirá " +
+      "igual; aprovecha para cambiar la contraseña por si acaso.",
+  });
+  await enviar(env, {
+    to,
+    subject: "Confirma el cambio de correo en Juez",
+    html,
+    text: `Hola, ${username}. Confirma el cambio de tu correo a ${nuevo}: ${enlace}\n\nCaduca en 1 hora.`,
+  });
+}

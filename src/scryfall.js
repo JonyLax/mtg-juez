@@ -8,6 +8,8 @@ const HEADERS = {
 // Cloudflare cachea la respuesta en el borde: las cartas no cambian a diario.
 const CF = { cf: { cacheTtl: 43200, cacheEverything: true } };
 
+import { aIngles } from "./cards.js";
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Saca los nombres escritos entre dobles corchetes: [[Lightning Bolt]] */
@@ -27,19 +29,20 @@ async function get(url) {
   return res.json();
 }
 
-async function lookup(name) {
-  // Primero por nombre en ingles con tolerancia a erratas
-  const fuzzy = await get(
-    `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`
-  );
-  if (fuzzy) return fuzzy;
+async function lookup(env, name) {
+  // 1. Si el nombre está escrito en otro idioma, lo traducimos con nuestro
+  //    índice. Scryfall no sabe buscar por nombre traducido: su operador
+  //    `name:` compara siempre contra el nombre inglés.
+  const traducido = await aIngles(env, name);
+  if (traducido) {
+    const exacto = await get(
+      `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(traducido)}`
+    );
+    if (exacto) return exacto;
+  }
 
-  // Si no, busca el nombre impreso en castellano
-  const q = `lang:es name:"${name.replace(/"/g, "")}"`;
-  const search = await get(
-    `https://api.scryfall.com/cards/search?unique=cards&q=${encodeURIComponent(q)}`
-  );
-  return search?.data?.[0] || null;
+  // 2. Nombre inglés, tolerando erratas y palabras sueltas
+  return get(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
 }
 
 function faces(card) {
@@ -58,12 +61,12 @@ function faces(card) {
  * Busca cada carta y sus rulings oficiales. Va en serie con pausa para
  * respetar el limite de Scryfall.
  */
-export async function fetchCards(names, legalityKey) {
+export async function fetchCards(env, names, legalityKey) {
   const out = [];
   for (const name of names) {
     let card;
     try {
-      card = await lookup(name);
+      card = await lookup(env, name);
     } catch {
       card = null;
     }

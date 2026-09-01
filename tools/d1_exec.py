@@ -157,10 +157,13 @@ def main():
     if not todas:
         raise SystemExit(f"{args.fichero} no tiene ninguna sentencia.")
 
-    grupos = list(lotes(todas))
+    # Cuando toleramos errores (migraciones), cada sentencia va sola. Si fueran
+    # en lote, la primera que falla aborta las demas del mismo lote y algunas
+    # migraciones no llegarian a aplicarse sin que nadie se enterara.
+    grupos = [[s] for s in todas] if args.tolerar_errores else list(lotes(todas))
     print(f"{args.fichero}: {len(todas)} sentencias en {len(grupos)} peticiones")
 
-    fallos = 0
+    fallos = omitidas = 0
     for i, grupo in enumerate(grupos, 1):
         ok, error = ejecutar(cuenta, token, db, "\n".join(grupo))
         if ok:
@@ -169,7 +172,8 @@ def main():
             continue
 
         if args.tolerar_errores:
-            print(f"  lote {i}: {error} (tolerado)")
+            omitidas += 1
+            print(f"  omitida: {error.split(':')[0]} -> {grupo[0][:60]}")
             continue
 
         # Una sentencia del lote ha fallado: la repetimos una a una para poder
@@ -184,7 +188,11 @@ def main():
 
     if fallos and not args.tolerar_errores:
         raise SystemExit(f"{fallos} sentencias han fallado.")
-    print("Hecho.")
+    if args.tolerar_errores:
+        print(f"Hecho. Aplicadas {len(grupos) - omitidas}, omitidas {omitidas} "
+              f"(las omitidas suelen ser columnas que ya existian).")
+    else:
+        print("Hecho.")
 
 
 if __name__ == "__main__":

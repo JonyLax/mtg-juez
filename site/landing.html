@@ -40,7 +40,7 @@
 
 <header class="top">
   <div class="env">
-    <a class="logo" href="/{{lang}}/">
+    <a class="logo" href="/{{lang}}/" title="Juez">
       <svg viewBox="0 0 64 64" role="img" aria-label="Juez"><use href="#sealArt"/></svg>
       <span>JUEZ</span>
     </a>
@@ -82,8 +82,10 @@
 
   <section class="filete">
     <div class="env">
-      <h2 data-aparece>{{problema_titulo}}</h2>
-      <p class="entradilla" data-aparece>{{problema_texto}}</p>
+      <div class="columna">
+        <h2 data-aparece>{{problema_titulo}}</h2>
+        <p class="entradilla" data-aparece>{{problema_texto}}</p>
+      </div>
     </div>
   </section>
 
@@ -112,9 +114,11 @@
 
   <section class="filete" id="tiendas">
     <div class="env">
-      <p class="etiqueta" data-aparece>{{tiendas_etiqueta}}</p>
-      <h2 data-aparece>{{tiendas_titulo}}</h2>
-      <p class="entradilla" data-aparece>{{tiendas_sub}}</p>
+      <div class="columna">
+        <p class="etiqueta" data-aparece>{{tiendas_etiqueta}}</p>
+        <h2 data-aparece>{{tiendas_titulo}}</h2>
+        <p class="entradilla" data-aparece>{{tiendas_sub}}</p>
+      </div>
       <div class="rejilla dos">
         <div data-aparece data-orden="3" class="bloque"><h3>{{tiendas_1_t}}</h3><p>{{tiendas_1_d}}</p></div>
         <div data-aparece data-orden="0" class="bloque"><h3>{{tiendas_2_t}}</h3><p>{{tiendas_2_d}}</p></div>
@@ -127,8 +131,10 @@
 
   <section class="filete" id="cuentas">
     <div class="env">
-      <h2 data-aparece>{{cuentas_titulo}}</h2>
-      <p class="entradilla" data-aparece>{{cuentas_sub}}</p>
+      <div class="columna">
+        <h2 data-aparece>{{cuentas_titulo}}</h2>
+        <p class="entradilla" data-aparece>{{cuentas_sub}}</p>
+      </div>
       {{planes}}
       <p class="nota" style="margin-top:26px" data-aparece>{{precios_aviso}}</p>
     </div>

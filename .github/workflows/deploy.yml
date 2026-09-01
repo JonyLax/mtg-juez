@@ -36,6 +36,9 @@ jobs:
       - name: Descargar y trocear las Comprehensive Rules
         run: python tools/build_rules.py
 
+      - name: Generar la web comercial
+        run: python tools/build_site.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"

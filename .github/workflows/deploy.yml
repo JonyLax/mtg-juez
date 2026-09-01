@@ -83,6 +83,44 @@ jobs:
 
           npm install
 
+          # ── Comprobacion antes de publicar ──────────────────────────────
+          # Las reglas y la web se generan en pasos anteriores. Si algo no ha
+          # llegado al disco, mas vale parar aqui que publicar un Worker vacio
+          # y descubrirlo en produccion.
+          echo "== Contenido de public/ =="
+          find public -type f | sort | sed 's/^/  /'
+          echo "== Reglas =="
+          python3 - <<'COMPROBAR'
+          import json, os, sys
+          fallos = []
+
+          ruta = "data/cr.json"
+          if not os.path.exists(ruta):
+              fallos.append("falta data/cr.json: el paso de reglas no ha escrito nada")
+          else:
+              m = json.load(open(ruta))["meta"]
+              print(f"  data/cr.json -> {m['rule_count']} reglas, vigentes desde {m['effective']}")
+              if m["rule_count"] < 1000:
+                  fallos.append(
+                      f"data/cr.json solo tiene {m['rule_count']} reglas. Es el fichero de "
+                      "arranque vacio: el paso 'Descargar y trocear' no ha surtido efecto."
+                  )
+
+          for lang in ("es", "en", "ca"):
+              p = f"public/{lang}/index.html"
+              if os.path.exists(p):
+                  print(f"  {p} -> {os.path.getsize(p) // 1024} KB")
+              else:
+                  fallos.append(f"falta {p}: el paso 'Generar la web comercial' no ha surtido efecto")
+
+          if fallos:
+              for f in fallos:
+                  print(f"::error::{f}")
+              sys.exit(1)
+          print("  Todo en su sitio.")
+          COMPROBAR
+          # ────────────────────────────────────────────────────────────────
+
           # Si ya has enlazado la base de datos, aplicamos el esquema.
           # Usamos tools/d1_exec.py y no `wrangler d1 execute --file`: ese
           # comando sube el SQL por el endpoint de importacion de Cloudflare,

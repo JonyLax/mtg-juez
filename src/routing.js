@@ -82,8 +82,29 @@ export async function servirWeb(request, env, url) {
   const pagina = PAGINAS[resto.join("/")];
   if (!pagina) return null; // deja que responda el 404 de los assets
 
-  // Que el usuario haya entrado a mano en /ca/ ya es una elección: la guardamos
-  const activo = await env.ASSETS.fetch(new URL(`/${lang}/${pagina}`, url.origin));
+  // Cloudflare puede servir una carpeta con index.html tanto en "/es/" como en
+  // "/es/index.html", y según la configuración una de las dos redirige a la
+  // otra. Probamos las dos antes de darnos por vencidos.
+  const candidatas = [`/${lang}/${pagina}`, `/${lang}/`];
+  let activo = null;
+  for (const ruta of candidatas) {
+    const r = await env.ASSETS.fetch(new URL(ruta, url.origin));
+    if (r.status === 200) { activo = r; break; }
+  }
+
+  if (!activo) {
+    // Sin esto, un fallo de generación aparece como un 404 pelado y no hay
+    // forma de saber si falta el fichero o si el enrutado está mal.
+    return new Response(
+      `No encuentro la página "${lang}/${pagina}".\n\n` +
+      "La web se genera en cada despliegue con tools/build_site.py. Si ves esto:\n" +
+      "  1. Mira en el log del despliegue el paso 'Generar la web comercial'.\n" +
+      "  2. Comprueba que el idioma esté en site/strings.json y en IDIOMAS_WEB.\n" +
+      "  3. Comprueba en /api/health que la versión desplegada es la que esperas.\n",
+      { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } }
+    );
+  }
+
   const respuesta = new Response(activo.body, activo);
   respuesta.headers.set("Set-Cookie", cookieIdioma(lang));
   respuesta.headers.set("Content-Language", lang);

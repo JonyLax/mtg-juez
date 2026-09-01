@@ -1,32 +1,26 @@
 {
   "_nota": "Para añadir un idioma: copia el bloque 'en', tradúcelo y añade el código a IDIOMAS en src/index.js. Nada más.",
-
   "es": {
     "lang": "es",
     "nombre_idioma": "Español",
     "titulo_pagina": "Juez · Reglas de Magic resueltas al instante",
     "meta_desc": "Resuelve dudas de reglas de Magic: The Gathering citando las Comprehensive Rules oficiales. Cada respuesta lleva su número de regla y puedes leer el texto literal.",
-
     "nav_como": "Cómo funciona",
     "nav_tiendas": "Para tiendas",
     "nav_precios": "Precios",
     "nav_entrar": "Entrar",
-
     "hero_etiqueta": "Juez de reglas de Magic: The Gathering",
     "hero_titulo": "La duda de reglas, resuelta antes de que acabe el turno",
     "hero_sub": "Pregunta con tus palabras. Te respondo citando las Comprehensive Rules oficiales, y puedes abrir cada cita para leer la regla literal.",
     "hero_cta": "Probar gratis",
-    "hero_cta2": "Ver precios",
+    "hero_cta2": "Ver cómo funciona",
     "hero_nota": "Sin instalar nada. Funciona en el móvil, en la mesa.",
-
     "demo_pregunta": "Si bloqueo una criatura con arrollar con un 1/1, ¿cuánto daño pasa al jugador?",
     "demo_respuesta": "Pasan 3 puntos de daño al jugador. El controlador de la criatura con arrollar debe asignar primero daño letal a todos sus bloqueadores antes de poder asignar el resto al jugador defensor",
     "demo_regla": "El controlador de una criatura atacante con arrollar asigna primero daño a las criaturas que la bloquean. Una vez asignado daño letal a todas ellas, el daño sobrante se asigna como su controlador elija…",
     "demo_pie": "Pulsa el número de regla y se abre el texto oficial.",
-
     "problema_titulo": "Buscar la regla a mitad de partida no funciona",
     "problema_texto": "Los foros contestan a otra pregunta. El buscador te da un hilo de 2014. Y el documento oficial son trescientas páginas en inglés, sin buscador decente y escritas para jueces. Mientras tanto, la partida está parada y cada uno tiene su versión.",
-
     "como_titulo": "Tres pasos",
     "como_1_t": "Dinos a qué jugáis",
     "como_1_d": "Commander, un uno contra uno, limitado, gigante de dos cabezas. Las reglas cambian según el formato, y si jugáis Commander puedes añadir vuestros acuerdos de mesa.",
@@ -34,7 +28,6 @@
     "como_2_d": "Sin tecnicismos. Nombra cartas por su nombre en tu idioma escribiéndolas entre dobles corchetes y te traigo el texto oficial y los rulings de Wizards.",
     "como_3_t": "Comprueba la cita",
     "como_3_d": "Cada afirmación lleva su número de regla. Púlsalo y lees el texto literal. Nada de fiarte de mi palabra.",
-
     "dif_titulo": "Por qué puedes fiarte",
     "dif_1_t": "Enseña de dónde lo saca",
     "dif_1_d": "Los modelos de lenguaje se equivocan con mucho aplomo en los casos raros. Por eso cada afirmación va con su número de regla, y si un número no se puede abrir es que se lo ha inventado. El error se vuelve visible en lugar de colarse.",
@@ -44,7 +37,6 @@
     "dif_3_d": "Escribe el nombre en castellano y lo entiende. Trae el texto oracle en inglés, que es el autoritativo, los rulings oficiales y si la carta es legal en tu formato.",
     "dif_4_t": "Pregunta antes de inventar",
     "dif_4_d": "Si la respuesta depende de algo que no le has contado, te da opciones para elegir en vez de suponer. Y sigue el hilo si le matizas o le corriges.",
-
     "tiendas_etiqueta": "Para tiendas y organizadores",
     "tiendas_titulo": "El juez que no se coge vacaciones",
     "tiendas_sub": "Si vendes juegos u organizas torneos, esto te quita trabajo del mostrador.",
@@ -57,7 +49,6 @@
     "tiendas_4_t": "Revisar mazos antes de empezar",
     "tiendas_4_d": "Si pones límite de presupuesto o de bracket, carga los mazos de todos los inscritos y te dice cuáles cumplen y cuáles no, con el motivo. En camino.",
     "tiendas_cta": "Hablemos de tu tienda",
-
     "precios_titulo": "Precios",
     "precios_sub": "Consultar reglas es gratis y va a seguir siéndolo.",
     "precios_gratis_t": "Gratis",
@@ -81,9 +72,7 @@
     "precios_tienda_2": "Varias cuentas para el equipo",
     "precios_tienda_3": "Revisión de mazos por lotes",
     "precios_tienda_4": "Herramientas de torneo",
-    "precios_cta": "Empezar gratis",
     "precios_aviso": "Los planes de pago están en preparación. Las consultas de reglas y los datos de cartas seguirán siendo gratuitos siempre.",
-
     "faq_titulo": "Preguntas",
     "faq_1_p": "¿Es una herramienta oficial de Wizards?",
     "faq_1_r": "No. Es un proyecto independiente, no está aprobada ni patrocinada por Wizards of the Coast.",
@@ -95,44 +84,42 @@
     "faq_4_r": "Español, inglés, portugués, francés, alemán e italiano. Las citas de reglas van en inglés porque el documento oficial solo existe en ese idioma.",
     "faq_5_p": "¿Necesito instalar algo?",
     "faq_5_r": "No. Funciona en el navegador y puedes añadirla a la pantalla de inicio del móvil como una app normal.",
-
     "cierre_titulo": "La próxima duda, resuelta",
     "cierre_cta": "Probar gratis",
-
     "pie_producto": "Producto",
     "pie_legal": "Legal",
     "pie_aviso": "Juez es contenido de fans no oficial permitido bajo la Fan Content Policy de Wizards of the Coast. No está aprobado ni respaldado por Wizards. Parte del material utilizado es propiedad de Wizards of the Coast. ©Wizards of the Coast LLC. Datos de cartas cortesía de Scryfall.",
     "pie_privacidad": "Privacidad",
     "pie_terminos": "Términos",
-    "pie_contacto": "Contacto"
+    "pie_contacto": "Contacto",
+    "nav_abrir": "Abrir el chat",
+    "cuentas_titulo": "Una cuenta para cada forma de jugar",
+    "cuentas_sub": "Empieza gratis. Si algún día se te queda corto, ahí estarán las otras.",
+    "cta_gratis": "Empezar gratis",
+    "cta_pro": "Avísame cuando esté",
+    "cta_tienda": "Hablar con nosotros"
   },
-
   "en": {
     "lang": "en",
     "nombre_idioma": "English",
     "titulo_pagina": "Juez · Magic rules questions, settled fast",
     "meta_desc": "Settle Magic: The Gathering rules questions with citations from the official Comprehensive Rules. Every answer shows its rule number, and you can read the exact text.",
-
     "nav_como": "How it works",
     "nav_tiendas": "For stores",
     "nav_precios": "Pricing",
     "nav_entrar": "Sign in",
-
     "hero_etiqueta": "A Magic: The Gathering rules judge",
     "hero_titulo": "Settle the rules question before the turn ends",
     "hero_sub": "Ask in plain language. You get an answer that cites the official Comprehensive Rules, and you can open any citation to read the rule itself.",
     "hero_cta": "Try it free",
-    "hero_cta2": "See pricing",
+    "hero_cta2": "See how it works",
     "hero_nota": "Nothing to install. Works on your phone, at the table.",
-
     "demo_pregunta": "If I block a trampler with a 1/1, how much damage gets through?",
     "demo_respuesta": "3 damage gets through to the player. The controller of the trampling creature must first assign lethal damage to every blocker before assigning the rest to the defending player",
     "demo_regla": "The controller of an attacking creature with trample first assigns damage to the creature(s) blocking it. Once all those blocking creatures are assigned lethal damage, any excess damage is assigned as its controller chooses…",
     "demo_pie": "Tap the rule number and the official text opens.",
-
     "problema_titulo": "Looking it up mid-game never works",
     "problema_texto": "Forums answer a different question. Search gives you a thread from 2014. And the official document is three hundred pages written for judges, with no decent search. Meanwhile the game is paused and everyone has their own version of the rule.",
-
     "como_titulo": "Three steps",
     "como_1_t": "Tell it your format",
     "como_1_d": "Commander, one-on-one constructed, limited, Two-Headed Giant. The rules change with the format, and for Commander you can add your table's house rules.",
@@ -140,7 +127,6 @@
     "como_2_d": "No jargon needed. Name cards in double brackets, in your language, and you get the official text plus Wizards' own rulings.",
     "como_3_t": "Check the citation",
     "como_3_d": "Every claim carries its rule number. Tap it and read the exact wording. You never have to take its word for it.",
-
     "dif_titulo": "Why you can trust it",
     "dif_1_t": "It shows its work",
     "dif_1_d": "Language models get rare cases wrong with total confidence. So every claim comes with a rule number, and a number you can't open is one the model invented. The mistake becomes visible instead of slipping past you.",
@@ -150,7 +136,6 @@
     "dif_3_d": "Type the printed name in Spanish and it knows the card. You get the English oracle text, which is the authoritative one, official rulings, and format legality.",
     "dif_4_t": "It asks instead of guessing",
     "dif_4_d": "When the answer depends on something you haven't mentioned, it offers you options rather than assuming. And it follows along when you correct or clarify.",
-
     "tiendas_etiqueta": "For stores and organisers",
     "tiendas_titulo": "The judge that never takes a holiday",
     "tiendas_sub": "If you sell games or run tournaments, this takes work off the counter.",
@@ -163,7 +148,6 @@
     "tiendas_4_t": "Checking decks before round one",
     "tiendas_4_d": "Set a budget or bracket limit, load every entrant's deck, and get back which ones pass and which don't, with the reason. Coming soon.",
     "tiendas_cta": "Tell us about your store",
-
     "precios_titulo": "Pricing",
     "precios_sub": "Rules questions are free, and they're staying free.",
     "precios_gratis_t": "Free",
@@ -187,9 +171,7 @@
     "precios_tienda_2": "Seats for your team",
     "precios_tienda_3": "Bulk deck checking",
     "precios_tienda_4": "Tournament tools",
-    "precios_cta": "Start free",
     "precios_aviso": "Paid plans are in preparation. Rules questions and card data will always stay free.",
-
     "faq_titulo": "Questions",
     "faq_1_p": "Is this an official Wizards tool?",
     "faq_1_r": "No. It's an independent project, not approved or endorsed by Wizards of the Coast.",
@@ -201,44 +183,42 @@
     "faq_4_r": "Spanish, English, Portuguese, French, German and Italian. Rule citations stay in English because the official document only exists in English.",
     "faq_5_p": "Do I need to install anything?",
     "faq_5_r": "No. It runs in the browser, and you can add it to your phone's home screen like any app.",
-
     "cierre_titulo": "Settle the next one",
     "cierre_cta": "Try it free",
-
     "pie_producto": "Product",
     "pie_legal": "Legal",
     "pie_aviso": "Juez is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. Not approved or endorsed by Wizards. Portions of the materials used are property of Wizards of the Coast. ©Wizards of the Coast LLC. Card data courtesy of Scryfall.",
     "pie_privacidad": "Privacy",
     "pie_terminos": "Terms",
-    "pie_contacto": "Contact"
+    "pie_contacto": "Contact",
+    "nav_abrir": "Open the chat",
+    "cuentas_titulo": "An account for how you play",
+    "cuentas_sub": "Start free. If you ever outgrow it, the others are waiting.",
+    "cta_gratis": "Start free",
+    "cta_pro": "Notify me",
+    "cta_tienda": "Talk to us"
   },
-
   "ca": {
     "lang": "ca",
     "nombre_idioma": "Català",
     "titulo_pagina": "Juez · Regles de Magic resoltes a l'instant",
     "meta_desc": "Resol dubtes de regles de Magic: The Gathering citant les Comprehensive Rules oficials. Cada resposta porta el seu número de regla i en pots llegir el text literal.",
-
     "nav_como": "Com funciona",
     "nav_tiendas": "Per a botigues",
     "nav_precios": "Preus",
     "nav_entrar": "Entrar",
-
     "hero_etiqueta": "Jutge de regles de Magic: The Gathering",
     "hero_titulo": "El dubte de regles, resolt abans que s'acabi el torn",
     "hero_sub": "Pregunta amb les teves paraules. Et responc citant les Comprehensive Rules oficials, i pots obrir cada cita per llegir la regla literal.",
     "hero_cta": "Provar-ho gratis",
-    "hero_cta2": "Veure preus",
+    "hero_cta2": "Veure com funciona",
     "hero_nota": "Sense instal·lar res. Funciona al mòbil, a la taula.",
-
     "demo_pregunta": "Si bloquejo una criatura amb atropellar amb un 1/1, quant dany passa al jugador?",
     "demo_respuesta": "Passen 3 punts de dany al jugador. El controlador de la criatura amb atropellar ha d'assignar primer dany letal a tots els bloquejadors abans de poder assignar la resta al jugador defensor",
     "demo_regla": "El controlador d'una criatura atacant amb atropellar assigna primer dany a les criatures que la bloquegen. Un cop assignat dany letal a totes, el dany sobrant s'assigna com el seu controlador esculli…",
     "demo_pie": "Prem el número de regla i s'obre el text oficial.",
-
     "problema_titulo": "Buscar la regla a mitja partida no funciona",
     "problema_texto": "Els fòrums responen una altra pregunta. El cercador et dona un fil del 2014. I el document oficial són tres-centes pàgines en anglès, sense cercador decent i escrites per a jutges. Mentrestant, la partida està aturada i cadascú té la seva versió.",
-
     "como_titulo": "Tres passos",
     "como_1_t": "Digues a què jugueu",
     "como_1_d": "Commander, un contra un, limitat, gegant de dos caps. Les regles canvien segons el format, i si jugueu Commander pots afegir els vostres acords de taula.",
@@ -246,7 +226,6 @@
     "como_2_d": "Sense tecnicismes. Anomena cartes pel seu nom en el teu idioma escrivint-les entre claudàtors dobles i et porto el text oficial i els rulings de Wizards.",
     "como_3_t": "Comprova la cita",
     "como_3_d": "Cada afirmació porta el seu número de regla. Prem-lo i llegeixes el text literal. Res de fiar-te de la meva paraula.",
-
     "dif_titulo": "Per què t'hi pots fiar",
     "dif_1_t": "Ensenya d'on ho treu",
     "dif_1_d": "Els models de llenguatge s'equivoquen amb molt aplom en els casos rars. Per això cada afirmació va amb el seu número de regla, i si un número no es pot obrir és que se l'ha inventat. L'error es fa visible en lloc de colar-se.",
@@ -256,7 +235,6 @@
     "dif_3_d": "Escriu el nom en català o castellà i l'entén. Porta el text oracle en anglès, que és l'autoritatiu, els rulings oficials i si la carta és legal en el teu format.",
     "dif_4_t": "Pregunta abans d'inventar",
     "dif_4_d": "Si la resposta depèn d'alguna cosa que no li has explicat, et dona opcions per triar en lloc de suposar. I segueix el fil si li matises o el corregeixes.",
-
     "tiendas_etiqueta": "Per a botigues i organitzadors",
     "tiendas_titulo": "El jutge que no fa vacances",
     "tiendas_sub": "Si vens jocs o organitzes tornejos, això et treu feina del taulell.",
@@ -269,7 +247,6 @@
     "tiendas_4_t": "Revisar mazos abans de començar",
     "tiendas_4_d": "Si poses límit de pressupost o de bracket, carrega els mazos de tots els inscrits i et diu quins compleixen i quins no, amb el motiu. En camí.",
     "tiendas_cta": "Parlem de la teva botiga",
-
     "precios_titulo": "Preus",
     "precios_sub": "Consultar regles és gratis i ho continuarà sent.",
     "precios_gratis_t": "Gratis",
@@ -293,9 +270,7 @@
     "precios_tienda_2": "Diversos comptes per a l'equip",
     "precios_tienda_3": "Revisió de mazos per lots",
     "precios_tienda_4": "Eines de torneig",
-    "precios_cta": "Començar gratis",
     "precios_aviso": "Els plans de pagament estan en preparació. Les consultes de regles i les dades de cartes continuaran sent gratuïtes sempre.",
-
     "faq_titulo": "Preguntes",
     "faq_1_p": "És una eina oficial de Wizards?",
     "faq_1_r": "No. És un projecte independent, no està aprovada ni patrocinada per Wizards of the Coast.",
@@ -307,15 +282,19 @@
     "faq_4_r": "Castellà, anglès, portuguès, francès, alemany i italià. Les cites de regles van en anglès perquè el document oficial només existeix en aquest idioma.",
     "faq_5_p": "Necessito instal·lar res?",
     "faq_5_r": "No. Funciona al navegador i pots afegir-la a la pantalla d'inici del mòbil com una app normal.",
-
     "cierre_titulo": "El pròxim dubte, resolt",
     "cierre_cta": "Provar-ho gratis",
-
     "pie_producto": "Producte",
     "pie_legal": "Legal",
     "pie_aviso": "Juez és contingut de fans no oficial permès sota la Fan Content Policy de Wizards of the Coast. No està aprovat ni avalat per Wizards. Part del material utilitzat és propietat de Wizards of the Coast. ©Wizards of the Coast LLC. Dades de cartes cortesia de Scryfall.",
     "pie_privacidad": "Privacitat",
     "pie_terminos": "Termes",
-    "pie_contacto": "Contacte"
+    "pie_contacto": "Contacte",
+    "nav_abrir": "Obrir el xat",
+    "cuentas_titulo": "Un compte per a cada manera de jugar",
+    "cuentas_sub": "Comença gratis. Si algun dia se't queda curt, allà hi seran els altres.",
+    "cta_gratis": "Començar gratis",
+    "cta_pro": "Avisa'm quan hi sigui",
+    "cta_tienda": "Parlar amb nosaltres"
   }
 }

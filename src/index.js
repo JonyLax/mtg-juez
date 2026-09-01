@@ -3,6 +3,7 @@ import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
 import { sugerir } from "./cards.js";
+import { esSubdominioChat, servirWeb } from "./site.js";
 
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;
@@ -33,7 +34,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 11;
+const VERSION = 12;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -296,6 +297,22 @@ export default {
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors(env) });
+    }
+
+    // ── Enrutado del sitio ────────────────────────────────────────────────
+    // La API responde igual en los dos dominios; lo que cambia es qué HTML
+    // se sirve cuando la ruta no es de la API.
+    if (!url.pathname.startsWith("/api/")) {
+      if (esSubdominioChat(url.hostname)) {
+        // El chat: cualquier ruta que no sea un fichero devuelve la app, para
+        // que /?reset=… y demás enlaces de correo funcionen.
+        const activo = await env.ASSETS.fetch(request);
+        if (activo.status !== 404) return activo;
+        return env.ASSETS.fetch(new URL("/app.html", url.origin));
+      }
+      const web = await servirWeb(request, env, url);
+      if (web) return web;
+      return env.ASSETS.fetch(request);
     }
 
     // Registro, verificación, sesión y contraseñas

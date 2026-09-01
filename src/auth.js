@@ -101,7 +101,7 @@ async function limpiarIntentos(env, bucket) {
 // ── sesiones ─────────────────────────────────────────────────────────────────
 const COOKIE = "juez_sid";
 
-function cabeceraCookie(token, segundos) {
+function cabeceraCookie(token, segundos, request) {
   const partes = [
     `${COOKIE}=${token}`,
     "Path=/",
@@ -110,6 +110,14 @@ function cabeceraCookie(token, segundos) {
     "SameSite=Lax",
     `Max-Age=${segundos}`,
   ];
+  // La sesion tiene que sobrevivir al salto de mtg-juez.com a
+  // chat.mtg-juez.com, asi que la cookie se emite para el dominio padre.
+  // En workers.dev y en localhost no se puede, y tampoco hace falta.
+  const host = new URL(request.url).hostname;
+  const m = host.match(/([a-z0-9-]+\.[a-z]{2,})$/i);
+  if (m && !host.endsWith(".workers.dev") && host !== "localhost") {
+    partes.push(`Domain=.${m[1]}`);
+  }
   return partes.join("; ");
 }
 
@@ -399,7 +407,7 @@ export async function manejarAuth(request, env, url) {
       env.DB.prepare("DELETE FROM users WHERE id = ?").bind(u.id),
     ]);
 
-    return json({ ok: true }, 200, { "Set-Cookie": cabeceraCookie("", 0) });
+    return json({ ok: true }, 200, { "Set-Cookie": cabeceraCookie("", 0, request) });
   }
 
   // ── parámetros del estirado, antes de iniciar sesión ───────────────────────
@@ -536,7 +544,7 @@ export async function manejarAuth(request, env, url) {
     return json(
       { ok: true, usuario: { id: u.id, username: u.username, email: u.email } },
       200,
-      { "Set-Cookie": cabeceraCookie(token, SESSION_DAYS * 86400) }
+      { "Set-Cookie": cabeceraCookie(token, SESSION_DAYS * 86400, request) }
     );
   }
 
@@ -547,7 +555,7 @@ export async function manejarAuth(request, env, url) {
       await env.DB.prepare("DELETE FROM sessions WHERE hash = ?")
         .bind(await sha256hex(token)).run();
     }
-    return json({ ok: true }, 200, { "Set-Cookie": cabeceraCookie("", 0) });
+    return json({ ok: true }, 200, { "Set-Cookie": cabeceraCookie("", 0, request) });
   }
 
   // ── he olvidado mi contraseña ──────────────────────────────────────────────

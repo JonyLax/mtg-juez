@@ -229,3 +229,17 @@ footer a:hover{color:var(--gold-hi)}
   font-size:12.5px; line-height:1.6; color:#7A6E58; font-style:italic;
   max-width:78ch;
 }
+
+/* ── aparición al bajar ─────────────────────────────────── */
+/* Desplazamiento corto y opacidad. Si el sistema pide menos movimiento,
+   el JS marca todo como visible y esto no llega a aplicarse nunca. */
+[data-aparece]{
+  opacity:0; transform:translateY(16px);
+  transition:opacity .55s cubic-bezier(.22,.61,.36,1), transform .55s cubic-bezier(.22,.61,.36,1);
+}
+[data-aparece].visible{opacity:1; transform:none}
+@media (prefers-reduced-motion:reduce){
+  [data-aparece]{opacity:1; transform:none; transition:none}
+}
+/* La portada no espera a nada: se ve desde el primer instante */
+.portada [data-aparece]{opacity:1; transform:none}

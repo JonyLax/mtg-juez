@@ -20,6 +20,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
 </head>
 <body>
 
@@ -45,8 +46,7 @@
     <nav>
       <a class="oculta-movil" href="#como">{{nav_como}}</a>
       <a class="oculta-movil" href="#tiendas">{{nav_tiendas}}</a>
-      <a href="/{{lang}}/precios">{{nav_precios}}</a>
-      <a class="btn" href="https://chat.mtg-juez.com/">{{nav_entrar}}</a>
+      <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{nav_entrar}}</a>
     </nav>
   </div>
 </header>
@@ -59,14 +59,14 @@
         <h1>{{hero_titulo}}</h1>
         <p class="entradilla">{{hero_sub}}</p>
         <div class="acciones">
-          <a class="btn" href="https://chat.mtg-juez.com/">{{hero_cta}}</a>
-          <a class="btn hueco" href="/{{lang}}/precios">{{hero_cta2}}</a>
+          <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{hero_cta}}</a>
+          <a class="btn hueco" href="#como">{{hero_cta2}}</a>
         </div>
         <p class="nota">{{hero_nota}}</p>
       </div>
 
       <div>
-        <div class="carta">
+        <div class="carta" data-aparece>
           <div class="carta-cab"><svg viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>Juez</div>
           <p class="pregunta">{{demo_pregunta}}</p>
           <div class="caja">
@@ -81,62 +81,62 @@
 
   <section class="filete">
     <div class="env">
-      <h2>{{problema_titulo}}</h2>
-      <p class="entradilla">{{problema_texto}}</p>
+      <h2 data-aparece>{{problema_titulo}}</h2>
+      <p class="entradilla" data-aparece>{{problema_texto}}</p>
     </div>
   </section>
 
   <section class="filete" id="como">
     <div class="env">
-      <p class="etiqueta">{{como_titulo}}</p>
+      <p class="etiqueta" data-aparece>{{como_titulo}}</p>
       <div class="rejilla tres pasos">
-        <div class="bloque paso"><h3>{{como_1_t}}</h3><p>{{como_1_d}}</p></div>
-        <div class="bloque paso"><h3>{{como_2_t}}</h3><p>{{como_2_d}}</p></div>
-        <div class="bloque paso"><h3>{{como_3_t}}</h3><p>{{como_3_d}}</p></div>
+        <div data-aparece data-orden="0" class="bloque paso"><h3>{{como_1_t}}</h3><p>{{como_1_d}}</p></div>
+        <div data-aparece data-orden="1" class="bloque paso"><h3>{{como_2_t}}</h3><p>{{como_2_d}}</p></div>
+        <div data-aparece data-orden="2" class="bloque paso"><h3>{{como_3_t}}</h3><p>{{como_3_d}}</p></div>
       </div>
     </div>
   </section>
 
   <section class="filete">
     <div class="env">
-      <h2>{{dif_titulo}}</h2>
+      <h2 data-aparece>{{dif_titulo}}</h2>
       <div class="rejilla dos">
-        <div class="bloque"><h3>{{dif_1_t}}</h3><p>{{dif_1_d}}</p></div>
-        <div class="bloque"><h3>{{dif_2_t}}</h3><p>{{dif_2_d}}</p></div>
-        <div class="bloque"><h3>{{dif_3_t}}</h3><p>{{dif_3_d}}</p></div>
-        <div class="bloque"><h3>{{dif_4_t}}</h3><p>{{dif_4_d}}</p></div>
+        <div data-aparece data-orden="3" class="bloque"><h3>{{dif_1_t}}</h3><p>{{dif_1_d}}</p></div>
+        <div data-aparece data-orden="0" class="bloque"><h3>{{dif_2_t}}</h3><p>{{dif_2_d}}</p></div>
+        <div data-aparece data-orden="1" class="bloque"><h3>{{dif_3_t}}</h3><p>{{dif_3_d}}</p></div>
+        <div data-aparece data-orden="2" class="bloque"><h3>{{dif_4_t}}</h3><p>{{dif_4_d}}</p></div>
       </div>
     </div>
   </section>
 
   <section class="filete" id="tiendas">
     <div class="env">
-      <p class="etiqueta">{{tiendas_etiqueta}}</p>
-      <h2>{{tiendas_titulo}}</h2>
-      <p class="entradilla">{{tiendas_sub}}</p>
+      <p class="etiqueta" data-aparece>{{tiendas_etiqueta}}</p>
+      <h2 data-aparece>{{tiendas_titulo}}</h2>
+      <p class="entradilla" data-aparece>{{tiendas_sub}}</p>
       <div class="rejilla dos">
-        <div class="bloque"><h3>{{tiendas_1_t}}</h3><p>{{tiendas_1_d}}</p></div>
-        <div class="bloque"><h3>{{tiendas_2_t}}</h3><p>{{tiendas_2_d}}</p></div>
-        <div class="bloque"><h3>{{tiendas_3_t}}</h3><p>{{tiendas_3_d}}</p></div>
-        <div class="bloque"><h3>{{tiendas_4_t}}</h3><p>{{tiendas_4_d}}</p></div>
+        <div data-aparece data-orden="3" class="bloque"><h3>{{tiendas_1_t}}</h3><p>{{tiendas_1_d}}</p></div>
+        <div data-aparece data-orden="0" class="bloque"><h3>{{tiendas_2_t}}</h3><p>{{tiendas_2_d}}</p></div>
+        <div data-aparece data-orden="1" class="bloque"><h3>{{tiendas_3_t}}</h3><p>{{tiendas_3_d}}</p></div>
+        <div data-aparece data-orden="2" class="bloque"><h3>{{tiendas_4_t}}</h3><p>{{tiendas_4_d}}</p></div>
       </div>
       <p style="margin-top:30px"><a class="btn hueco" href="mailto:hola@mtg-juez.com">{{tiendas_cta}}</a></p>
     </div>
   </section>
 
-  <section class="filete" id="precios">
+  <section class="filete" id="cuentas">
     <div class="env">
-      <h2>{{precios_titulo}}</h2>
-      <p class="entradilla">{{precios_sub}}</p>
+      <h2 data-aparece>{{cuentas_titulo}}</h2>
+      <p class="entradilla" data-aparece>{{cuentas_sub}}</p>
       {{planes}}
-      <p class="nota" style="margin-top:26px">{{precios_aviso}}</p>
+      <p class="nota" style="margin-top:26px" data-aparece>{{precios_aviso}}</p>
     </div>
   </section>
 
   <section class="filete">
     <div class="env">
-      <h2>{{faq_titulo}}</h2>
-      <div class="faq">
+      <h2 data-aparece>{{faq_titulo}}</h2>
+      <div class="faq" data-aparece>
         <details open><summary>{{faq_1_p}}</summary><p>{{faq_1_r}}</p></details>
         <details><summary>{{faq_2_p}}</summary><p>{{faq_2_r}}</p></details>
         <details><summary>{{faq_3_p}}</summary><p>{{faq_3_r}}</p></details>
@@ -148,8 +148,8 @@
 
   <section class="cierre filete">
     <div class="env">
-      <h2>{{cierre_titulo}}</h2>
-      <a class="btn" href="https://chat.mtg-juez.com/">{{cierre_cta}}</a>
+      <h2 data-aparece>{{cierre_titulo}}</h2>
+      <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{cierre_cta}}</a>
     </div>
   </section>
 </main>

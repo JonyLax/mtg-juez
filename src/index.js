@@ -3,7 +3,7 @@ import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
 import { sugerir } from "./cards.js";
-import { esSubdominioChat, servirWeb } from "./site.js";
+import { esSubdominioChat, servirWeb } from "./routing.js";
 
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;

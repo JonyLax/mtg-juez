@@ -14,12 +14,14 @@
 <meta property="og:url" content="https://mtg-juez.com/{{lang}}/">
 <meta property="og:image" content="https://mtg-juez.com/icon-512.png">
 <meta name="twitter:card" content="summary">
-<link rel="icon" href="/favicon.png" sizes="64x64">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/site.css">
+<script src="/web.js" defer></script>
 </head>
 <body>
 
@@ -43,10 +45,9 @@
       <span>JUEZ</span>
     </a>
     <nav>
-      <a class="oculta-movil" href="#como">{{nav_como}}</a>
-      <a class="oculta-movil" href="#tiendas">{{nav_tiendas}}</a>
-      <a href="/{{lang}}/precios">{{nav_precios}}</a>
-      <a class="btn" href="https://chat.mtg-juez.com/">{{nav_entrar}}</a>
+      <a class="oculta-movil" href="/{{lang}}/#como">{{nav_como}}</a>
+      <a class="oculta-movil" href="/{{lang}}/#tiendas">{{nav_tiendas}}</a>
+      <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{nav_entrar}}</a>
     </nav>
   </div>
 </header>
@@ -81,7 +82,7 @@
   <section class="cierre filete">
     <div class="env">
       <h2>{{cierre_titulo}}</h2>
-      <a class="btn" href="https://chat.mtg-juez.com/">{{cierre_cta}}</a>
+      <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{cierre_cta}}</a>
     </div>
   </section>
 </main>

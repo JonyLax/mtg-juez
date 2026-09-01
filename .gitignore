@@ -7,9 +7,6 @@ node_modules/
 data/cr.json
 cards.sql
 
-# La web comercial se genera desde site/ en cada despliegue
-public/es/
-public/en/
-public/ca/
-public/sitemap.xml
-public/robots.txt
+# Ojo: NO añadas aquí nada que esté dentro de public/. Wrangler construye el
+# manifiesto de assets desde esa carpeta y conviene que vea todo lo que hay,
+# incluido lo que genera tools/build_site.py en cada despliegue.

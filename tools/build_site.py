@@ -19,26 +19,26 @@ SITE = os.path.join(RAIZ, "site")
 OUT = os.path.join(RAIZ, "public")
 
 PLANES = """<div class="planes">
-        <div class="plan">
+        <div class="plan" data-aparece data-orden="0">
           <h3>{gratis_t}</h3>
           <div class="precio">{gratis_p}</div>
           <p>{gratis_d}</p>
           <ul><li>{gratis_1}</li><li>{gratis_2}</li><li>{gratis_3}</li><li>{gratis_4}</li></ul>
-          <a class="btn" href="https://chat.mtg-juez.com/">{cta}</a>
+          <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{abrir}">{cta_gratis}</a>
         </div>
-        <div class="plan destacado">
+        <div class="plan destacado" data-aparece data-orden="1">
           <h3>{pro_t}</h3>
           <div class="precio">{pro_p}</div>
           <p>{pro_d}</p>
           <ul><li>{pro_1}</li><li>{pro_2}</li><li>{pro_3}</li><li>{pro_4}</li></ul>
-          <a class="btn hueco" href="mailto:hola@mtg-juez.com">{cta}</a>
+          <a class="btn hueco" href="mailto:hola@mtg-juez.com">{cta_pro}</a>
         </div>
-        <div class="plan">
+        <div class="plan" data-aparece data-orden="2">
           <h3>{tienda_t}</h3>
           <div class="precio">{tienda_p}</div>
           <p>{tienda_d}</p>
           <ul><li>{tienda_1}</li><li>{tienda_2}</li><li>{tienda_3}</li><li>{tienda_4}</li></ul>
-          <a class="btn hueco" href="mailto:hola@mtg-juez.com">{cta}</a>
+          <a class="btn hueco" href="mailto:hola@mtg-juez.com">{cta_tienda}</a>
         </div>
       </div>"""
 
@@ -93,7 +93,8 @@ def main():
             tienda_d=t["precios_tienda_d"], tienda_1=t["precios_tienda_1"],
             tienda_2=t["precios_tienda_2"], tienda_3=t["precios_tienda_3"],
             tienda_4=t["precios_tienda_4"],
-            cta=t["precios_cta"],
+            cta_gratis=t["cta_gratis"], cta_pro=t["cta_pro"],
+            cta_tienda=t["cta_tienda"], abrir=t["nav_abrir"],
         )
 
         carpeta = os.path.join(OUT, lang)

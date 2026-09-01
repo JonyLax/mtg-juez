@@ -1,91 +1,52 @@
-// Enrutado del sitio.
-//
-//   chat.mtg-juez.com/…   -> la aplicación (public/app.html)
-//   mtg-juez.com/         -> redirección a /es/, /en/… según el navegador
-//   mtg-juez.com/es/…     -> web comercial en ese idioma
-//
-// El idioma se decide una vez y se recuerda en una cookie, para que quien lo
-// cambie a mano no vuelva a ser redirigido. Es lo que hacen las tiendas
-// grandes: entras en amazon.com y acabas en /es/ sin pedir nada.
+// Comportamiento de la web comercial. Dos cosas, las dos discretas.
 
-// Añadir un idioma: tradúcelo en site/strings.json y añádelo aquí.
-export const IDIOMAS_WEB = ["es", "en", "ca"];
-const POR_DEFECTO = "en";
-const COOKIE_IDIOMA = "juez_lang";
-
-/** Rutas que la web comercial sirve en cada idioma. */
-const PAGINAS = { "": "index.html", precios: "precios.html" };
-
-export function esSubdominioChat(hostname) {
-  return hostname.startsWith("chat.");
-}
-
-/**
- * Elige idioma mirando, por este orden: la cookie, el Accept-Language del
- * navegador y, si nada encaja, el idioma por defecto.
- */
-export function elegirIdioma(request) {
-  const cookies = request.headers.get("Cookie") || "";
-  const guardado = cookies.match(new RegExp(`${COOKIE_IDIOMA}=([a-z-]+)`));
-  if (guardado && IDIOMAS_WEB.includes(guardado[1])) return guardado[1];
-
-  // "es-ES,es;q=0.9,en;q=0.8" -> [["es-es",1],["es",0.9],["en",0.8]]
-  const cabecera = request.headers.get("Accept-Language") || "";
-  const preferencias = cabecera
-    .split(",")
-    .map((trozo) => {
-      const [etiqueta, ...params] = trozo.trim().split(";");
-      const q = params.find((p) => p.trim().startsWith("q="));
-      return [etiqueta.toLowerCase(), q ? parseFloat(q.split("=")[1]) || 0 : 1];
-    })
-    .filter(([etiqueta]) => etiqueta)
-    .sort((a, b) => b[1] - a[1]);
-
-  for (const [etiqueta] of preferencias) {
-    if (IDIOMAS_WEB.includes(etiqueta)) return etiqueta;
-    const base = etiqueta.split("-")[0]; // es-ES -> es
-    if (IDIOMAS_WEB.includes(base)) return base;
+// ─── 1. Aparición al bajar ────────────────────────────────────────────────────
+// Cada bloque entra una sola vez, con un desplazamiento corto. Nada de
+// parallax ni de contadores: en una página que quiere parecer seria, el
+// movimiento debe pasar casi desapercibido.
+(function aparicion() {
+  const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const objetivos = document.querySelectorAll("[data-aparece]");
+  if (quieto || !("IntersectionObserver" in window)) {
+    objetivos.forEach((el) => el.classList.add("visible"));
+    return;
   }
-  return POR_DEFECTO;
-}
 
-function cookieIdioma(lang) {
-  return `${COOKIE_IDIOMA}=${lang}; Path=/; Max-Age=31536000; SameSite=Lax`;
-}
+  const observador = new IntersectionObserver(
+    (entradas) => {
+      for (const e of entradas) {
+        if (!e.isIntersecting) continue;
+        // Escalonado corto dentro de un mismo grupo, para que los bloques de
+        // una rejilla no aparezcan todos de golpe
+        const i = Number(e.target.dataset.orden || 0);
+        e.target.style.transitionDelay = `${Math.min(i, 4) * 70}ms`;
+        e.target.classList.add("visible");
+        observador.unobserve(e.target);
+      }
+    },
+    { rootMargin: "0px 0px -12% 0px", threshold: 0.12 }
+  );
 
-/**
- * Devuelve la respuesta de la web comercial, o null si la ruta no es suya y
- * debe seguir su camino.
- */
-export async function servirWeb(request, env, url) {
-  const partes = url.pathname.split("/").filter(Boolean);
+  objetivos.forEach((el) => observador.observe(el));
+})();
 
-  // Raíz: mandamos al idioma que toque
-  if (partes.length === 0) {
-    const lang = elegirIdioma(request);
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: `/${lang}/`,
-        "Set-Cookie": cookieIdioma(lang),
-        // Sin esto, una CDN podría guardar la redirección de un idioma y
-        // servírsela a todo el mundo.
-        Vary: "Accept-Language, Cookie",
-        "Cache-Control": "no-store",
-      },
+// ─── 2. Si ya tienes sesión, el botón lo sabe ─────────────────────────────────
+// La API responde en los dos dominios, así que esta llamada es del mismo
+// origen y lleva la cookie. Si la sesión está compartida entre mtg-juez.com y
+// chat.mtg-juez.com, aquí se nota.
+(async function sesion() {
+  const botones = document.querySelectorAll("[data-entrar]");
+  if (!botones.length) return;
+  try {
+    const res = await fetch("/api/auth/me", { credentials: "same-origin" });
+    if (!res.ok) return;
+    const d = await res.json();
+    if (!d.usuario) return;
+    botones.forEach((b) => {
+      b.textContent = b.dataset.entrar; // "Abrir el chat"
+      b.title = d.usuario.username;
     });
+  } catch {
+    /* sin sesión o sin conexión: el botón se queda como estaba */
   }
-
-  const [lang, ...resto] = partes;
-  if (!IDIOMAS_WEB.includes(lang)) return null; // /favicon.png, /site.css, /api/…
-
-  const pagina = PAGINAS[resto.join("/")];
-  if (!pagina) return null; // deja que responda el 404 de los assets
-
-  // Que el usuario haya entrado a mano en /ca/ ya es una elección: la guardamos
-  const activo = await env.ASSETS.fetch(new URL(`/${lang}/${pagina}`, url.origin));
-  const respuesta = new Response(activo.body, activo);
-  respuesta.headers.set("Set-Cookie", cookieIdioma(lang));
-  respuesta.headers.set("Content-Language", lang);
-  return respuesta;
-}
+})();

@@ -227,7 +227,9 @@ footer a:hover{color:var(--gold-hi)}
 .legal{
   border-top:1px solid rgba(201,162,39,.14); padding-top:22px;
   font-size:12.5px; line-height:1.6; color:#7A6E58; font-style:italic;
-  max-width:78ch;
+  /* Un aviso legal ocupa todo el ancho del pie. Limitarlo a 78 caracteres
+     dejaba medio pie vacio en pantallas anchas y descuadraba el bloque. */
+  max-width:none;
 }
 
 /* ── aparición al bajar ─────────────────────────────────── */

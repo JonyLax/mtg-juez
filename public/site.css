@@ -1,0 +1,231 @@
+/* Web comercial de Juez. Mismo lenguaje visual que la app: tapete oscuro,
+   pergamino, pan de oro y la anatomía de una carta. */
+
+:root{
+  --table:#14100C;
+  --frame-hi:#423323; --frame:#2C2318; --frame-lo:#1A140D;
+  --edge:#0A0704;
+  --gold:#C9A227; --gold-hi:#EBD79B; --gold-lo:#8A6E18;
+  --parch:#F2EAD8; --parch-2:#E2D5B6;
+  --ink:#191510; --ink-soft:#67593F;
+  --rule:#B6A47A;
+  --muted:#9C8E74;
+  --display:"Cinzel",Georgia,serif;
+  --body:"Spectral",Georgia,serif;
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  --ancho:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+body{
+  margin:0; background:var(--grain), radial-gradient(130% 70% at 50% 0%, #241C13 0%, var(--table) 55%), var(--table);
+  background-blend-mode:soft-light,normal,normal; background-attachment:fixed;
+  color:var(--parch); font-family:var(--body); font-size:17px; line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--gold); outline-offset:3px; border-radius:3px}
+img,svg{max-width:100%}
+a{color:var(--gold-hi)}
+
+.env{width:100%; max-width:var(--ancho); margin:0 auto; padding:0 22px}
+
+/* ── barra superior ─────────────────────────────────────── */
+.top{
+  position:sticky; top:0; z-index:20;
+  background:rgba(18,14,9,.93); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--gold-lo);
+}
+.top .env{display:flex; align-items:center; gap:14px; height:62px}
+.logo{display:flex; align-items:center; gap:10px; text-decoration:none}
+.logo svg{width:29px; height:29px}
+.logo span{
+  font-family:var(--display); font-weight:700; font-size:18px; letter-spacing:.24em;
+  background:linear-gradient(#F6E9BE 20%, var(--gold) 55%, #9C7C1C 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.top nav{margin-left:auto; display:flex; align-items:center; gap:24px}
+.top nav a{
+  color:var(--parch); text-decoration:none; font-size:15px; opacity:.85;
+}
+.top nav a:hover{opacity:1; color:var(--gold-hi)}
+.top .btn{margin-left:4px}
+@media (max-width:760px){
+  .top nav a.oculta-movil{display:none}
+  .top nav{gap:14px}
+}
+
+/* ── botones ────────────────────────────────────────────── */
+.btn{
+  display:inline-block; text-decoration:none; text-align:center;
+  border:1px solid var(--edge); border-radius:6px; padding:13px 26px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%);
+  color:#181207; font-family:var(--display); font-weight:700;
+  font-size:13px; letter-spacing:.16em; text-transform:uppercase;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 4px 14px rgba(0,0,0,.4);
+}
+.top .btn{padding:9px 18px; font-size:11.5px; letter-spacing:.13em}
+.btn.hueco{
+  background:none; border-color:var(--gold-lo); color:var(--gold);
+  box-shadow:none;
+}
+.btn.hueco:hover{background:rgba(201,162,39,.1)}
+
+/* ── secciones ──────────────────────────────────────────── */
+section{padding:88px 0}
+section.filete{border-top:1px solid rgba(201,162,39,.18)}
+.etiqueta{
+  font-family:var(--display); font-size:11px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--gold); margin:0 0 14px;
+}
+h1,h2,h3{font-family:var(--display); font-weight:600; margin:0}
+h1{
+  font-size:clamp(34px,5.6vw,54px); line-height:1.12; letter-spacing:-.01em;
+  background:linear-gradient(#F8EFCF 10%, var(--gold-hi) 55%, var(--gold) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+h2{font-size:clamp(26px,3.6vw,36px); line-height:1.2; color:var(--gold-hi); margin-bottom:16px}
+h3{font-size:19px; line-height:1.3; color:var(--gold-hi); margin-bottom:8px}
+.entradilla{font-size:clamp(17px,2.1vw,20px); color:var(--muted); max-width:56ch}
+p{margin:0 0 16px}
+p:last-child{margin-bottom:0}
+
+/* ── portada ────────────────────────────────────────────── */
+.portada{padding:74px 0 84px}
+.portada .env{display:grid; gap:52px; grid-template-columns:1fr}
+@media (min-width:940px){
+  .portada .env{grid-template-columns:1.05fr .95fr; align-items:center; gap:56px}
+}
+.portada h1{margin-bottom:20px}
+.portada .entradilla{margin-bottom:30px}
+.acciones{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px}
+.nota{font-size:14.5px; color:var(--muted); font-style:italic; margin:0}
+
+/* ── la demostración, que es una carta ──────────────────── */
+.carta{
+  background:linear-gradient(158deg, var(--frame-hi) 0%, var(--frame) 45%, var(--frame-lo) 100%);
+  border:1px solid var(--edge); border-radius:14px; padding:9px;
+  box-shadow:0 0 0 1px rgba(235,215,155,.26) inset, 0 18px 44px rgba(0,0,0,.5);
+}
+.carta-cab{
+  display:flex; align-items:center; gap:9px; padding:6px 10px 10px;
+  font-family:var(--display); font-size:11px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--gold-hi);
+}
+.carta-cab svg{width:17px; height:17px}
+.pregunta{
+  background:rgba(242,234,216,.07); border:1px solid rgba(201,162,39,.38);
+  border-radius:5px; padding:9px 13px; margin:0 0 8px; font-size:14.5px;
+}
+.caja{
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  border:1px solid var(--edge); border-radius:6px; padding:16px 18px;
+  color:var(--ink); font-size:15.5px;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+.cita{
+  display:inline-block; font-family:var(--display); font-size:12px; font-weight:600;
+  background:linear-gradient(#F8F1DE,#E8DCBE); border:1px solid var(--rule);
+  border-radius:3px; padding:1px 6px; color:#6A5010; vertical-align:1px;
+}
+.regla{
+  border-top:1px solid var(--rule); margin-top:12px; padding-top:12px;
+  font-style:italic; font-size:14px; color:#473E2E; line-height:1.55;
+}
+.regla b{
+  font-family:var(--display); font-style:normal; font-size:12px;
+  color:#6A5010; margin-right:8px;
+}
+.demo-pie{
+  text-align:center; font-size:13.5px; color:var(--muted); font-style:italic;
+  margin:14px 0 0;
+}
+
+/* ── rejillas ───────────────────────────────────────────── */
+.rejilla{display:grid; gap:22px; margin-top:36px}
+.rejilla.tres{grid-template-columns:1fr}
+.rejilla.dos{grid-template-columns:1fr}
+@media (min-width:720px){ .rejilla.dos{grid-template-columns:1fr 1fr} }
+@media (min-width:900px){ .rejilla.tres{grid-template-columns:repeat(3,1fr)} }
+.bloque{
+  border:1px solid rgba(201,162,39,.22); border-radius:9px; padding:24px 22px;
+  background:rgba(66,51,35,.2);
+}
+.bloque p{color:var(--muted); font-size:15.5px}
+.paso{counter-increment:paso}
+.paso h3::before{
+  content:counter(paso); display:inline-block; width:26px; height:26px;
+  line-height:25px; text-align:center; margin-right:11px; font-size:13px;
+  border:1px solid var(--gold-lo); border-radius:50%; color:var(--gold);
+}
+.pasos{counter-reset:paso}
+
+/* ── precios ────────────────────────────────────────────── */
+.planes{display:grid; gap:20px; grid-template-columns:1fr; margin-top:38px}
+@media (min-width:860px){ .planes{grid-template-columns:repeat(3,1fr)} }
+.plan{
+  border:1px solid rgba(201,162,39,.28); border-radius:11px; padding:26px 24px;
+  background:rgba(66,51,35,.22); display:flex; flex-direction:column;
+}
+.plan.destacado{border-color:var(--gold); box-shadow:0 0 0 1px rgba(201,162,39,.3)}
+.plan h3{margin-bottom:4px}
+.precio{
+  font-family:var(--display); font-size:34px; color:var(--parch);
+  margin:10px 0 4px; line-height:1;
+}
+.plan > p{color:var(--muted); font-size:15px; margin-bottom:18px}
+.plan ul{list-style:none; margin:0 0 24px; padding:0; flex:1}
+.plan li{
+  font-size:15px; padding:7px 0 7px 24px; position:relative; color:var(--parch);
+  border-bottom:1px solid rgba(201,162,39,.12);
+}
+.plan li:last-child{border-bottom:none}
+.plan li::before{
+  content:"◆"; position:absolute; left:0; color:var(--gold); font-size:10px; top:10px;
+}
+
+/* ── preguntas ──────────────────────────────────────────── */
+.faq{margin-top:34px; border-top:1px solid rgba(201,162,39,.18)}
+.faq details{border-bottom:1px solid rgba(201,162,39,.18)}
+.faq summary{
+  cursor:pointer; padding:19px 34px 19px 0; position:relative;
+  font-family:var(--display); font-size:17.5px; color:var(--gold-hi);
+  list-style:none;
+}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{
+  content:"+"; position:absolute; right:6px; top:17px; color:var(--gold);
+  font-size:21px; font-family:var(--body);
+}
+.faq details[open] summary::after{content:"–"}
+.faq p{padding:0 0 20px; color:var(--muted); max-width:70ch}
+
+/* ── cierre y pie ───────────────────────────────────────── */
+.cierre{text-align:center; padding:92px 0}
+.cierre h2{margin-bottom:26px}
+footer{
+  border-top:1px solid rgba(201,162,39,.2); padding:44px 0 56px;
+  font-size:14.5px; color:var(--muted);
+}
+.pie-cols{display:grid; gap:28px; grid-template-columns:1fr; margin-bottom:32px}
+@media (min-width:720px){ .pie-cols{grid-template-columns:2fr 1fr 1fr} }
+footer h4{
+  font-family:var(--display); font-size:11px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--gold); margin:0 0 12px; font-weight:600;
+}
+footer ul{list-style:none; margin:0; padding:0}
+footer li{margin-bottom:8px}
+footer a{color:var(--muted); text-decoration:none}
+footer a:hover{color:var(--gold-hi)}
+.idiomas{display:flex; flex-wrap:wrap; gap:10px; margin-top:6px}
+.idiomas a{
+  border:1px solid rgba(201,162,39,.3); border-radius:4px; padding:4px 10px;
+  font-size:13px;
+}
+.idiomas a[aria-current]{border-color:var(--gold); color:var(--gold-hi)}
+.legal{
+  border-top:1px solid rgba(201,162,39,.14); padding-top:22px;
+  font-size:12.5px; line-height:1.6; color:#7A6E58; font-style:italic;
+  max-width:78ch;
+}

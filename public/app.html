@@ -1,0 +1,1539 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14100C">
+<meta name="description" content="Resuelve dudas de reglas de Magic citando las Comprehensive Rules oficiales.">
+<title>Juez · reglas de Magic</title>
+
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/favicon.png" sizes="64x64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Juez">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --table:#14100C;
+  --frame-hi:#423323; --frame:#2C2318; --frame-lo:#1A140D;
+  --edge:#0A0704;
+  --gold:#C9A227; --gold-hi:#EBD79B; --gold-lo:#8A6E18;
+  --parch:#F2EAD8; --parch-2:#E2D5B6;
+  --ink:#191510; --ink-soft:#67593F;
+  --rule:#B6A47A;
+  --alert:#8A3419;
+  --display:"Cinzel",Georgia,serif;
+  --body:"Spectral",Georgia,serif;
+
+  /* Grano de papel: ruido fractal en SVG, casi imperceptible pero quita el
+     aspecto de plano de color liso. */
+  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    var(--grain),
+    radial-gradient(140% 90% at 50% -10%, #241C13 0%, var(--table) 60%),
+    var(--table);
+  background-blend-mode:soft-light,normal,normal;
+  background-attachment:fixed;
+  color:var(--parch); font-family:var(--body); font-size:16px; line-height:1.62;
+  -webkit-font-smoothing:antialiased; min-height:100dvh;
+  display:flex; flex-direction:column;
+}
+:focus-visible{outline:2px solid var(--gold); outline-offset:2px; border-radius:2px}
+button{font:inherit; color:inherit; cursor:pointer}
+
+/* ── cabecera ───────────────────────────────────────────── */
+header{
+  position:sticky; top:0; z-index:10;
+  background:linear-gradient(#1E1810,#120E09);
+  border-bottom:1px solid var(--gold-lo);
+  box-shadow:0 1px 0 rgba(235,215,155,.14), 0 10px 24px rgba(0,0,0,.55);
+  padding:10px max(14px,env(safe-area-inset-left)) 10px max(14px,env(safe-area-inset-right));
+  display:flex; align-items:center; gap:10px;
+}
+.seal{width:30px; height:30px; flex:0 0 auto; display:block}
+.wordmark{
+  font-family:var(--display); font-weight:700; font-size:19px; letter-spacing:.24em;
+  line-height:1; padding-top:2px;
+  background:linear-gradient(#F6E9BE 20%, var(--gold) 55%, #9C7C1C 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.ctx{margin-left:auto; display:flex; align-items:center; gap:12px; min-width:0}
+.ctx-label{
+  font-family:var(--display); font-size:11.5px; letter-spacing:.1em;
+  color:var(--gold-hi); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  opacity:.85;
+}
+.linkbtn{
+  background:none; border:none; padding:5px 2px; color:var(--gold);
+  font-family:var(--display); font-size:11.5px; letter-spacing:.1em;
+  text-decoration:underline; text-underline-offset:4px; white-space:nowrap;
+}
+
+main{
+  flex:1; width:100%; max-width:680px; margin:0 auto;
+  padding:26px max(14px,env(safe-area-inset-left)) 8px max(14px,env(safe-area-inset-right));
+}
+
+/* ── pantalla de arranque ───────────────────────────────── */
+.hero-seal{width:62px; height:62px; display:block; margin:0 0 18px}
+.lede{
+  font-family:var(--display); font-weight:600; font-size:28px; line-height:1.24;
+  margin:0 0 10px;
+  background:linear-gradient(#F6E9BE, var(--gold) 70%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.sub{color:#9C8E74; font-size:15px; margin:0 0 28px; max-width:46ch}
+fieldset{border:none; margin:0 0 26px; padding:0}
+legend{
+  font-family:var(--display); font-size:10.5px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--gold); padding:0 0 12px;
+}
+.grid{display:grid; gap:9px}
+.opt{
+  display:flex; align-items:baseline; gap:10px; width:100%; text-align:left;
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  color:var(--ink); border:1px solid var(--edge); border-radius:5px;
+  padding:12px 15px;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset, 0 2px 6px rgba(0,0,0,.35);
+  transition:box-shadow .14s;
+}
+.opt:hover{box-shadow:0 0 0 2px var(--gold), 0 1px 0 rgba(255,255,255,.45) inset}
+.opt[aria-pressed="true"]{
+  box-shadow:0 0 0 2px var(--gold), 0 1px 0 rgba(255,255,255,.45) inset;
+}
+.opt b{font-family:var(--display); font-weight:600; font-size:15px}
+.opt em{font-style:italic; color:var(--ink-soft); font-size:13.5px}
+label.field{display:block; margin-bottom:18px}
+label.field > span{
+  display:block; font-family:var(--display); font-size:10.5px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--gold); margin-bottom:8px;
+}
+input,select,textarea{
+  width:100%; font-family:var(--body); font-size:15px; color:var(--ink);
+  background:linear-gradient(var(--parch),var(--parch-2));
+  border:1px solid var(--edge); border-radius:5px; padding:10px 12px;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+textarea{resize:vertical; min-height:74px}
+.hint{font-size:13px; color:#9C8E74; font-style:italic; margin:8px 0 0}
+.primary{
+  width:100%; border:1px solid var(--edge); border-radius:5px; padding:14px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%);
+  color:#181207;
+  font-family:var(--display); font-weight:700; font-size:14px; letter-spacing:.16em;
+  text-transform:uppercase;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 3px 10px rgba(0,0,0,.4);
+}
+.primary:disabled{opacity:.35; cursor:not-allowed}
+
+
+/* ── pantallas de cuenta ────────────────────────────────── */
+.auth{max-width:400px; margin:0 auto}
+.auth .hero-seal{margin:0 auto 20px}
+.auth-h{
+  font-family:var(--display); font-weight:600; font-size:25px; text-align:center;
+  margin:0 0 8px;
+  background:linear-gradient(#F6E9BE, var(--gold) 70%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.auth-sub{color:#9C8E74; font-size:14.5px; text-align:center; margin:0 0 26px}
+.switch{text-align:center; margin-top:20px; font-size:14px; color:#9C8E74}
+.switch button{
+  background:none; border:none; padding:2px; color:var(--gold);
+  text-decoration:underline; text-underline-offset:4px; font-size:14px;
+}
+.msg{
+  border-radius:5px; padding:11px 14px; margin:0 0 20px; font-size:14.5px;
+  border-left:3px solid;
+}
+.msg.bien{background:rgba(78,139,84,.13); border-color:#4E8B54; color:#9FD3A4}
+.msg.mal {background:rgba(138,52,25,.15); border-color:var(--alert); color:#E0A184}
+.msg.info{background:rgba(201,162,39,.11); border-color:var(--gold); color:var(--gold-hi)}
+.trabajando{
+  text-align:center; font-family:var(--display); font-size:11.5px;
+  letter-spacing:.18em; text-transform:uppercase; color:#9C8E74; margin-top:14px;
+}
+.medidor{height:3px; background:rgba(201,162,39,.18); border-radius:2px; margin-top:10px; overflow:hidden}
+.medidor i{display:block; height:100%; width:0; background:var(--gold); transition:width .25s}
+
+/* ── conversación ───────────────────────────────────────── */
+.log{display:flex; flex-direction:column; gap:24px}
+.turn-you{align-self:flex-end; max-width:86%}
+.bubble{
+  background:rgba(242,234,216,.06); border:1px solid rgba(201,162,39,.38);
+  border-radius:5px; padding:9px 14px; font-size:15px; color:var(--parch);
+}
+.cardtag{font-family:var(--display); font-size:.9em; color:var(--gold-hi)}
+
+/* la respuesta del juez ES una carta */
+.turn-judge{
+  background:linear-gradient(158deg, var(--frame-hi) 0%, var(--frame) 45%, var(--frame-lo) 100%);
+  border:1px solid var(--edge); border-radius:13px; padding:8px;
+  box-shadow:
+    0 0 0 1px rgba(235,215,155,.26) inset,
+    0 1px 0 rgba(255,255,255,.06) inset,
+    0 12px 30px rgba(0,0,0,.5);
+  animation:deal .3s ease-out;
+}
+@keyframes deal{from{opacity:0; transform:translateY(7px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){ .turn-judge{animation:none} }
+
+.card-title{
+  display:flex; align-items:center; gap:8px; padding:4px 8px 9px;
+  font-family:var(--display); font-size:11.5px; font-weight:600;
+  letter-spacing:.24em; text-transform:uppercase; color:var(--gold-hi);
+}
+.card-title .seal{width:17px; height:17px}
+.card-title .n{margin-left:auto; opacity:.5; letter-spacing:.12em; font-size:10.5px}
+
+/* la línea de tipo dice bajo qué reglas se ha respondido */
+.typeline{
+  display:flex; align-items:center; gap:7px;
+  background:var(--grain), linear-gradient(#EEE3C9,#DCCEAC);
+  background-blend-mode:multiply,normal;
+  border:1px solid var(--edge); border-radius:4px;
+  padding:5px 11px; margin-bottom:7px;
+  font-family:var(--display); font-size:10.5px; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:#4C3D1C;
+  box-shadow:0 1px 0 rgba(255,255,255,.4) inset;
+}
+.textbox{
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  border:1px solid var(--edge); border-radius:5px;
+  padding:16px 18px; color:var(--ink);
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+.answer{font-size:16px}
+.answer p{margin:0 0 .78em}
+.answer p:last-child{margin-bottom:0}
+
+/* firma: la cita se abre como el texto recordatorio de una carta */
+.cite{
+  font-family:var(--display); font-size:12px; font-weight:600; letter-spacing:.03em;
+  background:linear-gradient(#F8F0D8,#E7DABA); border:1px solid var(--rule);
+  border-radius:3px; padding:1px 6px; color:#6A5010; white-space:nowrap;
+  vertical-align:1px;
+}
+button.cite:hover,button.cite[aria-expanded="true"]{
+  background:linear-gradient(#F5E3AC,#E0C87F); border-color:#87701F;
+}
+.sources{margin-top:15px}
+.source{
+  border-top:1px solid var(--rule); margin-top:11px; padding-top:11px;
+  font-style:italic; font-size:14.5px; color:#473E2E; line-height:1.56;
+}
+.source .id{
+  font-family:var(--display); font-style:normal; font-weight:600; font-size:12px;
+  color:#6A5010; letter-spacing:.05em; margin-right:8px;
+}
+.hidden{display:none}
+
+.opts{display:flex; flex-direction:column; gap:7px; margin-top:8px}
+.optbtn{
+  text-align:left; color:var(--ink); border:1px solid var(--edge); border-radius:5px;
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  padding:11px 15px; font-size:15px;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+.optbtn:hover{box-shadow:0 0 0 2px var(--gold), 0 1px 0 rgba(255,255,255,.45) inset}
+
+.flag{
+  margin-top:14px; font-size:14px; color:var(--alert); font-style:italic;
+  border-left:3px solid var(--alert); padding:3px 0 3px 12px;
+}
+.cards{display:flex; gap:10px; margin-top:15px; flex-wrap:wrap}
+.cards a{display:block; width:88px; text-decoration:none}
+.cards img{
+  width:88px; height:123px; object-fit:cover; border-radius:4px; display:block;
+  background:#2C2318; box-shadow:0 3px 9px rgba(0,0,0,.4);
+}
+.cards figcaption{
+  font-family:var(--display); font-size:10.5px; color:var(--ink-soft);
+  display:block; margin-top:6px; line-height:1.35;
+}
+.cards figure{margin:0}
+
+.thinking{
+  font-family:var(--display); font-size:12.5px; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--ink-soft); padding:2px 0;
+}
+.thinking::after{content:"·"; animation:blink 1.1s steps(3,end) infinite}
+@keyframes blink{0%{content:"·"}33%{content:"··"}66%{content:"···"}}
+@media (prefers-reduced-motion:reduce){ .thinking::after{content:"···"; animation:none} }
+.err{color:var(--alert); font-size:15px}
+.detail{
+  font-size:12.5px; color:var(--ink-soft); font-style:italic;
+  border-top:1px solid var(--rule); margin-top:10px; padding-top:10px;
+  white-space:pre-wrap; word-break:break-word;
+}
+
+/* ── autocompletado de cartas ───────────────────────────── */
+.sugerencias{
+  position:absolute; bottom:calc(100% + 6px); left:0; right:0; z-index:20;
+  background:linear-gradient(var(--frame-hi),var(--frame-lo));
+  border:1px solid var(--edge); border-radius:8px; padding:5px;
+  box-shadow:0 0 0 1px rgba(235,215,155,.26) inset, 0 -8px 24px rgba(0,0,0,.55);
+  max-height:246px; overflow-y:auto;
+}
+.sug{
+  display:flex; align-items:baseline; gap:9px; width:100%; text-align:left;
+  background:none; border:none; border-radius:4px; padding:8px 11px;
+  color:var(--parch); font-size:14.5px;
+}
+.sug:hover,.sug[aria-selected="true"]{background:rgba(201,162,39,.18)}
+.sug b{font-weight:500}
+.sug em{font-style:italic; font-size:12px; color:#9C8E74; margin-left:auto; text-align:right}
+
+/* ── ajustes ────────────────────────────────────────────── */
+.ajustes{max-width:440px; margin:0 auto}
+.bloque{
+  border:1px solid rgba(201,162,39,.3); border-radius:8px;
+  padding:17px 18px; margin-bottom:16px;
+}
+.bloque h2{
+  font-family:var(--display); font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--gold); margin:0 0 12px; font-weight:600;
+}
+.bloque p{font-size:13.5px; color:#9C8E74; margin:0 0 13px; font-style:italic}
+.bloque.peligro{border-color:rgba(138,52,25,.55)}
+.bloque.peligro h2{color:#C4674A}
+.secundario{
+  width:100%; background:none; border:1px solid var(--gold-lo); border-radius:5px;
+  padding:11px; color:var(--gold);
+  font-family:var(--display); font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.secundario:hover{background:rgba(201,162,39,.1)}
+.peligroso{
+  width:100%; background:none; border:1px solid var(--alert); border-radius:5px;
+  padding:11px; color:#C4674A;
+  font-family:var(--display); font-size:12.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.peligroso:hover{background:rgba(138,52,25,.14)}
+
+
+/* ── guía de bienvenida ─────────────────────────────────── */
+.tour-fondo{
+  position:fixed; inset:0; z-index:100; display:flex; align-items:center;
+  justify-content:center; padding:18px;
+  background:rgba(10,7,4,.82); backdrop-filter:blur(3px);
+}
+.tour-carta{
+  width:100%; max-width:430px;
+  background:linear-gradient(158deg, var(--frame-hi) 0%, var(--frame) 45%, var(--frame-lo) 100%);
+  border:1px solid var(--edge); border-radius:13px; padding:8px;
+  box-shadow:0 0 0 1px rgba(235,215,155,.26) inset, 0 16px 44px rgba(0,0,0,.6);
+  max-height:calc(100dvh - 36px); display:flex; flex-direction:column;
+}
+.tour-cab{
+  display:flex; align-items:center; gap:8px; padding:4px 8px 9px;
+  font-family:var(--display); font-size:11px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--gold-hi);
+}
+.tour-cab .seal{width:16px; height:16px}
+.tour-cab span{margin-left:auto; opacity:.55; letter-spacing:.12em; font-size:10.5px}
+.tour-caja{
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  border:1px solid var(--edge); border-radius:5px; padding:18px;
+  color:var(--ink); overflow-y:auto;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+.tour-caja h2{
+  font-family:var(--display); font-size:19px; font-weight:600;
+  margin:0 0 10px; color:#3B2F13;
+}
+.tour-caja p{margin:0 0 12px; font-size:15px}
+.tour-caja p:last-child{margin-bottom:0}
+.tour-ilu{
+  border:1px dashed var(--rule); border-radius:5px;
+  padding:13px; margin:0 0 14px; background:rgba(255,255,255,.4);
+}
+.tour-ilu .fila{display:flex; align-items:center; gap:7px; margin-bottom:6px; font-size:13.5px}
+.tour-ilu .fila:last-child{margin-bottom:0}
+.tour-ilu .falso{
+  border:1px solid var(--rule); border-radius:4px; padding:5px 9px;
+  background:linear-gradient(#F8F1DE,#EADEC2); font-size:13px; flex:1;
+}
+.tour-ilu .gris{color:#8C8271; font-style:italic}
+.tour-pies{display:flex; align-items:center; gap:10px; padding:11px 4px 3px}
+.tour-puntos{display:flex; gap:5px; margin-right:auto}
+.punto{width:6px; height:6px; border-radius:50%; background:rgba(235,215,155,.28)}
+.punto.hoy{background:var(--gold)}
+.tour-omitir{
+  background:none; border:none; color:var(--gold-hi); opacity:.75;
+  font-family:var(--display); font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; padding:7px 4px; text-decoration:underline;
+  text-underline-offset:4px;
+}
+.tour-atras{
+  background:none; border:1px solid var(--gold-lo); border-radius:5px;
+  color:var(--gold); padding:9px 15px;
+  font-family:var(--display); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.tour-sig{
+  border:1px solid var(--edge); border-radius:5px; padding:9px 19px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%);
+  color:#181207; font-family:var(--display); font-weight:700;
+  font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset;
+}
+
+/* ── barra de escritura ─────────────────────────────────── */
+.composer{
+  position:sticky; bottom:0;
+  background:linear-gradient(#120E09,#1E1810);
+  border-top:1px solid var(--gold-lo);
+  box-shadow:0 -1px 0 rgba(235,215,155,.14), 0 -10px 24px rgba(0,0,0,.55);
+  padding:11px max(14px,env(safe-area-inset-left)) max(11px,env(safe-area-inset-bottom));
+}
+.composer-inner{max-width:680px; margin:0 auto; display:flex; gap:9px; align-items:flex-end; position:relative}
+.composer textarea{min-height:46px; max-height:160px; overflow-y:hidden; line-height:1.45}
+.send{
+  border:1px solid var(--edge); border-radius:5px; padding:0 20px; height:46px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%);
+  color:#181207; flex:0 0 auto;
+  font-family:var(--display); font-weight:700; font-size:12.5px; letter-spacing:.14em;
+  text-transform:uppercase;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset, 0 3px 10px rgba(0,0,0,.4);
+}
+.send:disabled{opacity:.35}
+footer{
+  max-width:680px; margin:0 auto; padding:14px 14px 24px;
+  font-size:12px; color:#7A6E58; font-style:italic; line-height:1.6; text-align:center;
+}
+#install{
+  display:none; margin:0 auto 4px; background:none; border:1px solid var(--gold-lo);
+  border-radius:4px; padding:6px 14px; color:var(--gold);
+  font-family:var(--display); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- El sello: pentágono con las cinco marcas de color y el árbitro en el centro -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="sealArt">
+      <circle cx="32" cy="32" r="27.5" fill="none" stroke="#C9A227" stroke-opacity=".45" stroke-width="1.4"/>
+      <polygon points="32,8 54.8,24.6 46.1,51.4 17.9,51.4 9.2,24.6"
+               fill="none" stroke="#C9A227" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="32,25.5 37,32 32,38.5 27,32" fill="#EBD79B"/>
+      <circle cx="32"   cy="8"    r="5.4" fill="#F7F0DA" stroke="#0A0704" stroke-width="1.2"/>
+      <circle cx="54.8" cy="24.6" r="5.4" fill="#3B7BB5" stroke="#0A0704" stroke-width="1.2"/>
+      <circle cx="46.1" cy="51.4" r="5.4" fill="#3A342C" stroke="#0A0704" stroke-width="1.2"/>
+      <circle cx="17.9" cy="51.4" r="5.4" fill="#B4413A" stroke="#0A0704" stroke-width="1.2"/>
+      <circle cx="9.2"  cy="24.6" r="5.4" fill="#4E8B54" stroke="#0A0704" stroke-width="1.2"/>
+    </g>
+  </defs>
+</svg>
+
+<header>
+  <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="Juez"><use href="#sealArt"/></svg>
+  <span class="wordmark">JUEZ</span>
+  <div class="ctx">
+    <span class="ctx-label" id="ctxLabel"></span>
+    <button class="linkbtn hidden" id="btnNew">Nueva consulta</button>
+    <button class="linkbtn hidden" id="btnChange">Cambiar</button>
+    <button class="linkbtn hidden" id="btnAjustes">Ajustes</button>
+    <button class="linkbtn hidden" id="btnSalir">Salir</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── cuenta ─────────────────────────────────────────── -->
+  <section id="auth" class="auth hidden">
+    <svg class="hero-seal" viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>
+    <h1 class="auth-h" id="authTitulo">Entrar</h1>
+    <p class="auth-sub" id="authSub">Resuelve dudas de reglas citando el documento oficial.</p>
+    <div id="authMsg"></div>
+
+    <form id="formLogin" autocomplete="on">
+      <label class="field"><span>Usuario o correo</span>
+        <input type="text" id="lgUser" autocomplete="username" required></label>
+      <label class="field"><span>Contraseña</span>
+        <input type="password" id="lgPass" autocomplete="current-password" required></label>
+      <button class="primary" type="submit">Entrar</button>
+      <div class="switch">
+        <button type="button" id="irOlvide">He olvidado mi contraseña</button><br>
+        ¿No tienes cuenta? <button type="button" id="irRegistro">Crear una cuenta</button>
+      </div>
+    </form>
+
+    <form id="formRegistro" class="hidden" autocomplete="on">
+      <label class="field"><span>Nombre de usuario</span>
+        <input type="text" id="rgUser" autocomplete="username" required
+               minlength="3" maxlength="24" pattern="[a-zA-Z0-9_.\-]{3,24}">
+        <p class="hint">De 3 a 24 caracteres: letras, números, punto, guion o guion bajo.</p></label>
+      <label class="field"><span>Correo electrónico</span>
+        <input type="email" id="rgMail" autocomplete="email" required></label>
+      <label class="field"><span>Contraseña</span>
+        <input type="password" id="rgPass" autocomplete="new-password" required minlength="10">
+        <p class="hint">Diez caracteres como mínimo.</p></label>
+      <label class="field"><span>Repite la contraseña</span>
+        <input type="password" id="rgPass2" autocomplete="new-password" required minlength="10"></label>
+      <button class="primary" type="submit">Crear la cuenta</button>
+      <div class="switch">¿Ya tienes una? <button type="button" id="irLogin">Entrar</button></div>
+    </form>
+
+    <form id="formOlvide" class="hidden">
+      <label class="field"><span>Tu correo electrónico</span>
+        <input type="email" id="olMail" autocomplete="email" required>
+        <p class="hint">Te mando un enlace para elegir una contraseña nueva.</p></label>
+      <button class="primary" type="submit">Enviar el enlace</button>
+      <div class="switch"><button type="button" id="irLogin2">Volver a entrar</button></div>
+    </form>
+
+    <form id="formReset" class="hidden">
+      <label class="field"><span>Contraseña nueva</span>
+        <input type="password" id="rsPass" autocomplete="new-password" required minlength="10">
+        <p class="hint">Diez caracteres como mínimo.</p></label>
+      <label class="field"><span>Repítela</span>
+        <input type="password" id="rsPass2" autocomplete="new-password" required minlength="10"></label>
+      <button class="primary" type="submit">Guardar la contraseña</button>
+    </form>
+
+    <div class="trabajando hidden" id="authTrabajando">
+      Cifrando la contraseña
+      <div class="medidor"><i id="authBarra"></i></div>
+    </div>
+  </section>
+
+  <section id="setup" class="hidden">
+    <svg class="hero-seal" viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>
+    <h1 class="lede">¿En qué estáis jugando?</h1>
+    <p class="sub">Las reglas cambian según el formato. Dímelo una vez y no vuelvo a preguntar.</p>
+
+    <fieldset>
+      <legend>Formato</legend>
+      <div class="grid" id="formats"></div>
+    </fieldset>
+
+    <label class="field hidden" id="subWrap">
+      <span>Formato concreto</span>
+      <select id="subformat">
+        <option value="standard" selected>Standard</option>
+        <option value="pioneer">Pioneer</option>
+        <option value="modern">Modern</option>
+        <option value="legacy">Legacy</option>
+        <option value="vintage">Vintage</option>
+        <option value="pauper">Pauper</option>
+      </select>
+      <p class="hint">Solo se usa para comprobar si una carta es legal.</p>
+    </label>
+
+    <label class="field hidden" id="houseWrap">
+      <span>Acuerdos de mesa</span>
+      <textarea id="houseRules" placeholder="Mulligan gratis el primero, no hay infinitos, proxies permitidas…"></textarea>
+      <p class="hint">Lo que hayáis pactado en la Rule 0. Nunca sustituye a las reglas del juego.</p>
+    </label>
+
+    <button class="primary" id="btnStart">Empezar</button>
+  </section>
+
+  <section id="ajustes" class="ajustes hidden">
+    <h1 class="lede">Ajustes</h1>
+    <p class="sub" id="ajQuien"></p>
+    <div id="ajMsg"></div>
+
+    <div class="bloque">
+      <h2>Idioma de las respuestas</h2>
+      <p>El juez responderá en este idioma aunque preguntes en otro. Las reglas
+         oficiales solo existen en inglés, así que las citas seguirán en inglés.</p>
+      <label class="field"><span>Idioma</span>
+        <select id="ajLang">
+          <option value="es">Español</option>
+          <option value="en">English</option>
+          <option value="pt">Português</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="it">Italiano</option>
+        </select></label>
+      <button class="secundario" id="ajGuardarLang">Guardar idioma</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Nombre de usuario</h2>
+      <p id="ajCuandoUsuario"></p>
+      <label class="field"><span>Nuevo nombre</span>
+        <input type="text" id="ajUsuario" maxlength="24" autocomplete="username"></label>
+      <button class="secundario" id="ajGuardarUsuario">Cambiar nombre</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Contraseña</h2>
+      <p>Al cambiarla se cierran las sesiones de tus otros dispositivos. Esta se queda abierta.</p>
+      <label class="field"><span>Contraseña actual</span>
+        <input type="password" id="ajPassVieja" autocomplete="current-password"></label>
+      <label class="field"><span>Contraseña nueva</span>
+        <input type="password" id="ajPassNueva" autocomplete="new-password" minlength="10"></label>
+      <label class="field"><span>Repite la nueva</span>
+        <input type="password" id="ajPassNueva2" autocomplete="new-password" minlength="10"></label>
+      <button class="secundario" id="ajGuardarPass">Cambiar contraseña</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Correo electrónico</h2>
+      <p>El enlace de confirmación llega a tu dirección <strong>actual</strong>, no a la nueva.
+         Así nadie puede llevarse tu cuenta a otro correo sin que te enteres.
+         Revisa bien la dirección nueva antes de enviar.</p>
+      <label class="field"><span>Correo nuevo</span>
+        <input type="email" id="ajMail" autocomplete="email"></label>
+      <label class="field"><span>Confirma con tu contraseña</span>
+        <input type="password" id="ajMailPass" autocomplete="current-password"></label>
+      <button class="secundario" id="ajGuardarMail">Cambiar correo</button>
+    </div>
+
+    <div class="bloque peligro">
+      <h2>Dar de baja la cuenta</h2>
+      <p>Se borra tu usuario, tus sesiones y tus enlaces pendientes. No se puede
+         deshacer y el nombre queda libre para otra persona.</p>
+      <label class="field"><span>Confirma con tu contraseña</span>
+        <input type="password" id="ajPass" autocomplete="current-password"></label>
+      <button class="peligroso" id="ajBorrar">Borrar mi cuenta para siempre</button>
+    </div>
+
+    <div class="bloque">
+      <h2>Guía</h2>
+      <p>Vuelve a ver la explicación de cómo funciona el juez.</p>
+      <button class="secundario" id="ajTour">Ver la guía otra vez</button>
+    </div>
+
+    <div class="switch"><button type="button" id="ajVolver">Volver al juez</button></div>
+  </section>
+
+  <section id="chat" class="hidden">
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<div class="composer hidden" id="composer">
+  <div class="composer-inner">
+    <textarea id="q" rows="1" placeholder="Escribe la duda. Para citar una carta: [[Lightning Bolt]]"></textarea>
+    <div id="sugerencias"></div>
+    <button class="send" id="btnSend">Enviar</button>
+  </div>
+</div>
+
+<div id="tour"></div>
+
+<footer>
+  <button id="install">Instalar la app</button>
+  <div id="foot"></div>
+</footer>
+
+<script>
+const API = "";
+
+const FORMATS = [
+  ["commander", "Commander", "Multijugador, 100 cartas, 40 vidas"],
+  ["duel",      "Constructed 1 contra 1", "Standard, Pioneer, Modern, Legacy…"],
+  ["limited",   "Limitado", "Draft o sellado, mazo de 40"],
+  ["2hg",       "Gigante de dos cabezas", "Dos equipos de dos, vidas compartidas"],
+  ["casual",    "Casual multijugador", "Todos contra todos"],
+];
+const NOMBRE_FORMATO = Object.fromEntries(FORMATS.map(([id, n]) => [id, n]));
+const SEAL = '<svg class="seal" viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>';
+
+const S = {
+  format: localStorage.getItem("mtg.format") || "",
+  subformat: localStorage.getItem("mtg.subformat") || "standard",
+  houseRules: localStorage.getItem("mtg.house") || "",
+  turns: [],
+  busy: false,
+};
+
+try { S.turns = JSON.parse(localStorage.getItem("mtg.turns") || "[]"); } catch { S.turns = []; }
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function guardarTurnos() {
+  // Las últimas 20 intervenciones bastan y evitan llenar el almacenamiento
+  S.turns = S.turns.slice(-20);
+  try { localStorage.setItem("mtg.turns", JSON.stringify(S.turns)); } catch {}
+}
+
+/** Lo que se le manda al Worker como contexto de la conversación. */
+function historial() {
+  return S.turns
+    .map((t) => ({ role: t.role, text: t.role === "juez" ? t.data?.texto || "" : t.text }))
+    .filter((t) => t.text)
+    .slice(-8);
+}
+
+// ─── Pantalla de arranque ─────────────────────────────────────────────────────
+function paintFormats() {
+  $("formats").innerHTML = FORMATS.map(([id, name, desc]) =>
+    `<button class="opt" type="button" data-fmt="${id}" aria-pressed="${S.format === id}">
+       <b>${name}</b><em>${desc}</em>
+     </button>`).join("");
+  $("formats").querySelectorAll("[data-fmt]").forEach((b) => {
+    b.onclick = () => { S.format = b.dataset.fmt; paintFormats(); syncSetup(); };
+  });
+}
+
+function syncSetup() {
+  $("subWrap").classList.toggle("hidden", S.format !== "duel");
+  $("houseWrap").classList.toggle("hidden", S.format !== "commander" && S.format !== "casual");
+  $("btnStart").disabled = !S.format;
+}
+
+function contextLabel() {
+  const n = NOMBRE_FORMATO[S.format];
+  if (!n) return "";
+  return S.format === "duel" ? `${n} · ${S.subformat}` : n;
+}
+
+function abrirChat() {
+  $("setup").classList.add("hidden");
+  $("chat").classList.remove("hidden");
+  $("composer").classList.remove("hidden");
+  $("btnChange").classList.remove("hidden");
+  $("btnSalir").classList.remove("hidden");
+  $("btnAjustes").classList.remove("hidden");
+  $("btnNew").classList.toggle("hidden", S.turns.length === 0);
+  $("ctxLabel").textContent = contextLabel();
+}
+
+function start() {
+  S.subformat = $("subformat").value;
+  S.houseRules = $("houseRules").value.trim();
+  localStorage.setItem("mtg.format", S.format);
+  localStorage.setItem("mtg.subformat", S.subformat);
+  localStorage.setItem("mtg.house", S.houseRules);
+  abrirChat();
+  $("q").focus();
+}
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function renderYou(text) {
+  const el = document.createElement("div");
+  el.className = "turn-you";
+  el.innerHTML = `<div class="bubble">${esc(text)
+    .replace(/\[\[([^\]\n]{2,80})\]\]/g, '<span class="cardtag">$1</span>')}</div>`;
+  $("log").append(el);
+  return el;
+}
+
+function renderPending() {
+  const el = document.createElement("div");
+  el.className = "turn-judge";
+  el.innerHTML =
+    `<div class="card-title">${SEAL}Juez</div>` +
+    `<div class="textbox"><div class="thinking">Consultando las reglas</div></div>`;
+  $("log").append(el);
+  scroll();
+  return el;
+}
+
+/**
+ * Convierte [CR 603.3a] en una pastilla que abre el texto literal de la regla.
+ * Acepta también varios números en un mismo corchete: [CR 304.2, CR 608.2n].
+ */
+const RULE_REF = /\d{3}\.\d+[a-z]?/;
+const CITATION = new RegExp(
+  "\\[\\s*(?:CR\\s*)?" + RULE_REF.source +
+  "(?:\\s*[,;y]+\\s*(?:CR\\s*)?" + RULE_REF.source + ")*\\s*\\]",
+  "gi"
+);
+
+function withCitations(text, sources) {
+  const known = new Set(sources.map((s) => s.id));
+  return esc(text).replace(CITATION, (bloque) => {
+    const ids = bloque.match(new RegExp(RULE_REF.source, "g")) || [];
+    return ids
+      .map((id) =>
+        known.has(id)
+          ? `<button class="cite" type="button" data-rule="${id}" aria-expanded="false">${id}</button>`
+          : `<span class="cite">${id}</span>`
+      )
+      .join(" ");
+  });
+}
+
+function renderJudge(el, data) {
+  el.className = "turn-judge";
+  const sources = data.fuentes || [];
+  const paras = String(data.texto || "")
+    .split(/\n{2,}/)
+    .map((p) => `<p>${withCitations(p, sources).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+
+  let box = `<div class="answer">${paras}</div>`;
+
+  // En una clarificación la confianza baja no significa "las reglas no lo
+  // cubren", solo que faltan datos. Enseñar el aviso ahí confunde más que ayuda.
+  if (data.confianza === "baja" && data.tipo !== "clarificacion") {
+    box += `<div class="flag">Poca confianza: las reglas que he encontrado no cubren bien
+            este caso. Si la partida es seria, contrastadlo con un juez o con el
+            documento oficial.</div>`;
+  }
+
+  const cards = (data.cartas || []).filter((c) => c.found && c.image);
+  if (cards.length) {
+    box += `<div class="cards">${cards.map((c) =>
+      `<figure><a href="${esc(c.scryfall_uri || "#")}" target="_blank" rel="noopener">
+         <img src="${esc(c.image)}" alt="${esc(c.name)}" width="88" height="123"
+              onerror="this.style.visibility='hidden'">
+         <figcaption>${esc(c.printed_name || c.name)}${
+           c.legality && c.legality !== "legal" ? " · " + esc(c.legality) : ""
+         }</figcaption>
+       </a></figure>`).join("")}</div>`;
+  }
+
+  const missing = (data.cartas || []).filter((c) => !c.found);
+  if (missing.length) {
+    box += `<div class="flag">No encuentro en Scryfall: ${missing.map((c) => esc(c.query)).join(", ")}.
+            Revisa el nombre exacto.</div>`;
+  }
+
+  if (sources.length) {
+    box += `<div class="sources">${sources.map((s) =>
+      `<div class="source hidden" data-src="${esc(s.id)}">
+         <span class="id">${esc(s.id)}</span>${esc(s.text)}
+       </div>`).join("")}</div>`;
+  }
+
+  const tipo = data.tipo === "clarificacion" ? "Aclaración" : "Respuesta";
+  let html =
+    `<div class="card-title">${SEAL}Juez<span class="n">${sources.length ? sources.length + " reglas" : ""}</span></div>` +
+    `<div class="typeline">${esc(contextLabel() || "Magic")} — ${tipo}</div>` +
+    `<div class="textbox">${box}</div>`;
+
+  if (data.tipo === "clarificacion" && (data.opciones || []).length) {
+    html += `<div class="opts">${data.opciones.map((o) =>
+      `<button class="optbtn" type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  }
+
+  el.innerHTML = html;
+
+  el.querySelectorAll(".cite[data-rule]").forEach((chip) => {
+    chip.onclick = () => {
+      const src = el.querySelector(`[data-src="${chip.dataset.rule}"]`);
+      if (!src) return;
+      const oculto = src.classList.toggle("hidden");
+      chip.setAttribute("aria-expanded", String(!oculto));
+    };
+  });
+  el.querySelectorAll("[data-opt]").forEach((b) => {
+    b.onclick = () => { el.querySelectorAll(".opts").forEach((o) => o.remove()); send(b.dataset.opt); };
+  });
+}
+
+function renderError(el, error, detail) {
+  el.className = "turn-judge";
+  el.innerHTML =
+    `<div class="card-title">${SEAL}Juez</div>` +
+    `<div class="textbox"><div class="err">${esc(error)}</div>` +
+    (detail ? `<div class="detail">${esc(detail)}</div>` : "") +
+    `</div>`;
+}
+
+/** Vuelve a pintar toda la conversación guardada, al abrir la app. */
+function repintar() {
+  $("log").innerHTML = "";
+  for (const t of S.turns) {
+    if (t.role === "juez") {
+      const el = document.createElement("div");
+      $("log").append(el);
+      renderJudge(el, t.data);
+    } else {
+      renderYou(t.text);
+    }
+  }
+}
+
+function scroll() {
+  requestAnimationFrame(() =>
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }));
+}
+
+// ─── Envío ────────────────────────────────────────────────────────────────────
+async function send(text) {
+  if (S.busy || !text.trim()) return;
+  S.busy = true;
+  $("btnSend").disabled = true;
+  $("q").value = "";
+  autogrow();
+
+  const historia = historial();
+  renderYou(text);
+  S.turns.push({ role: "tu", text });
+  $("btnNew").classList.remove("hidden");
+  const pending = renderPending();
+
+  try {
+    const res = await fetch(`${API}/api/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        question: text,
+        format: S.format,
+        subformat: S.subformat,
+        houseRules: S.houseRules,
+        history: historia,
+      }),
+    });
+    const data = await res.json();
+
+    if (res.status === 401) {
+      pending.remove();
+      mostrarAuth("login", data.error || "Tu sesión ha caducado. Vuelve a entrar.", "mal");
+      S.busy = false; $("btnSend").disabled = false;
+      return;
+    }
+    if (!res.ok) {
+      renderError(pending, data.error || "Algo ha fallado.", data.detail);
+    } else {
+      renderJudge(pending, data);
+      S.turns.push({ role: "juez", data });
+    }
+  } catch (e) {
+    renderError(pending, "No he podido contactar con el servidor.",
+      "Comprueba tu conexión y vuelve a intentarlo.");
+  }
+
+  guardarTurnos();
+  scroll();
+  S.busy = false;
+  $("btnSend").disabled = false;
+  $("q").focus();
+}
+
+function autogrow() {
+  const t = $("q");
+  t.style.height = "auto";
+  t.style.height = Math.min(t.scrollHeight, 160) + "px";
+  t.style.overflowY = t.scrollHeight > 160 ? "auto" : "hidden";
+}
+
+// ─── Arranque ─────────────────────────────────────────────────────────────────
+paintFormats();
+syncSetup();
+$("subformat").value = S.subformat;
+$("houseRules").value = S.houseRules;
+
+$("btnStart").onclick = start;
+$("btnSend").onclick = () => send($("q").value);
+$("q").oninput = () => {
+  autogrow();
+  clearTimeout(sugTemporizador);
+  sugTemporizador = setTimeout(buscarSugerencias, 200);
+};
+$("q").onblur = () => setTimeout(cerrarSugerencias, 120);
+$("q").onkeydown = (e) => {
+  // Con la lista abierta, las flechas y el Enter la manejan a ella
+  if (sugActuales.length) {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      sugElegida = (sugElegida + (e.key === "ArrowDown" ? 1 : -1) + sugActuales.length) % sugActuales.length;
+      pintarSugerencias();
+      return;
+    }
+    if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault(); aceptarSugerencia(sugElegida < 0 ? 0 : sugElegida); return;
+    }
+    if (e.key === "Escape") { e.preventDefault(); cerrarSugerencias(); return; }
+  }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("q").value); }
+};
+$("btnNew").onclick = () => {
+  S.turns = [];
+  guardarTurnos();
+  $("log").innerHTML = "";
+  $("btnNew").classList.add("hidden");
+  $("q").focus();
+};
+$("btnChange").onclick = () => {
+  $("setup").classList.remove("hidden");
+  $("chat").classList.add("hidden");
+  $("composer").classList.add("hidden");
+  $("btnChange").classList.add("hidden");
+  $("btnNew").classList.add("hidden");
+  $("ctxLabel").textContent = "";
+  syncSetup();
+};
+
+// Nada se muestra hasta saber si hay sesión abierta
+arrancarSesion();
+
+// ─── Cuenta ───────────────────────────────────────────────────────────────────
+// El estirado de la contraseña se hace AQUÍ, en el navegador, no en el
+// servidor. Motivo: el plan gratuito de Workers da 10 ms de CPU por petición y
+// 600.000 iteraciones de PBKDF2 cuestan unos 100 ms. Al navegador no le duele
+// hacerlo una vez, y el servidor recibe una clave ya derivada sobre la que
+// aplica otra vuelta más una pimienta secreta.
+const KDF_DEFAULT = 600000;
+const MIN_PASS = 10;
+
+const bytesAHex = (b) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
+
+function salAleatoria() {
+  return bytesAHex(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+async function derivar(password, sal, iteraciones) {
+  const material = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256",
+      salt: new TextEncoder().encode(sal), iterations: iteraciones },
+    material, 256
+  );
+  return bytesAHex(bits);
+}
+
+let tokenReset = null;
+
+function authMensaje(texto, clase = "info") {
+  $("authMsg").innerHTML = texto ? `<div class="msg ${clase}">${esc(texto)}</div>` : "";
+}
+
+function authTrabajando(activo) {
+  $("authTrabajando").classList.toggle("hidden", !activo);
+  $("authBarra").style.width = activo ? "100%" : "0";
+  $("auth").querySelectorAll("button,input").forEach((el) => (el.disabled = activo));
+}
+
+const FORMULARIOS = {
+  login:    { form: "formLogin",    titulo: "Entrar",                  sub: "Resuelve dudas de reglas citando el documento oficial." },
+  registro: { form: "formRegistro", titulo: "Crear una cuenta",        sub: "Te mandaré un correo para confirmar la dirección." },
+  olvide:   { form: "formOlvide",   titulo: "Recuperar el acceso",     sub: "Te mando un enlace para elegir otra contraseña." },
+  reset:    { form: "formReset",    titulo: "Contraseña nueva",        sub: "Elige una y podrás entrar con ella." },
+};
+
+function mostrarAuth(cual, mensaje, clase) {
+  for (const [k, v] of Object.entries(FORMULARIOS)) {
+    $(v.form).classList.toggle("hidden", k !== cual);
+  }
+  $("authTitulo").textContent = FORMULARIOS[cual].titulo;
+  $("authSub").textContent = FORMULARIOS[cual].sub;
+  authMensaje(mensaje || "", clase);
+  $("auth").classList.remove("hidden");
+  $("setup").classList.add("hidden");
+  $("chat").classList.add("hidden");
+  $("composer").classList.add("hidden");
+  ["btnChange", "btnNew", "btnSalir", "btnAjustes"].forEach((b) => $(b).classList.add("hidden"));
+  $("ctxLabel").textContent = "";
+}
+
+async function pedir(ruta, cuerpo) {
+  const res = await fetch(`${API}/api/auth/${ruta}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo),
+  });
+  let data = {};
+  try { data = await res.json(); } catch {}
+  return { ok: res.ok, status: res.status, data };
+}
+
+/** Entra en la app: elige pantalla de formato o conversación. */
+function entrar(usuario) {
+  S.usuario = usuario;
+  $("auth").classList.add("hidden");
+  $("ajustes").classList.add("hidden");
+  $("btnSalir").classList.remove("hidden");
+  if (S.format) { abrirChat(); if (S.turns.length) { repintar(); scroll(); } }
+  else { $("setup").classList.remove("hidden"); }
+  // Primera vez que entra: le explicamos cómo va esto
+  if (usuario && !usuario.tour_visto) abrirTour();
+}
+
+// ── inicio de sesión ──
+$("formLogin").onsubmit = async (e) => {
+  e.preventDefault();
+  const login = $("lgUser").value.trim();
+  const pass = $("lgPass").value;
+  if (!login || !pass) return;
+  authTrabajando(true);
+  authMensaje("");
+  try {
+    const sal = await pedir("salt", { login });
+    const dk = await derivar(pass, sal.data.salt, sal.data.iterations || KDF_DEFAULT);
+    const r = await pedir("login", { login, dk });
+    if (r.ok) { $("lgPass").value = ""; entrar(r.data.usuario); return; }
+    authMensaje(r.data.error || "No he podido entrar.", "mal");
+  } catch (err) {
+    authMensaje("No he podido contactar con el servidor.", "mal");
+  } finally { authTrabajando(false); }
+};
+
+// ── registro ──
+$("formRegistro").onsubmit = async (e) => {
+  e.preventDefault();
+  const username = $("rgUser").value.trim();
+  const email = $("rgMail").value.trim();
+  const pass = $("rgPass").value;
+  if (pass !== $("rgPass2").value) return authMensaje("Las dos contraseñas no coinciden.", "mal");
+  if (pass.length < MIN_PASS) return authMensaje(`La contraseña necesita al menos ${MIN_PASS} caracteres.`, "mal");
+  authTrabajando(true);
+  authMensaje("");
+  try {
+    const salt = salAleatoria();
+    const dk = await derivar(pass, salt, KDF_DEFAULT);
+    const r = await pedir("register", { username, email, salt, dk, iterations: KDF_DEFAULT });
+    if (r.ok) {
+      $("rgPass").value = $("rgPass2").value = "";
+      mostrarAuth("login",
+        `Cuenta creada. Te he mandado un correo a ${email}: confírmalo y ya puedes entrar. Mira también la carpeta de spam.`,
+        "bien");
+      return;
+    }
+    authMensaje(r.data.error || "No he podido crear la cuenta.", "mal");
+  } catch (err) {
+    authMensaje("No he podido contactar con el servidor.", "mal");
+  } finally { authTrabajando(false); }
+};
+
+// ── he olvidado mi contraseña ──
+$("formOlvide").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $("olMail").value.trim();
+  authTrabajando(true);
+  try {
+    await pedir("forgot", { email });
+    mostrarAuth("login",
+      "Si esa dirección tiene cuenta, ya va camino un enlace para cambiar la contraseña. Caduca en una hora.",
+      "bien");
+  } catch { authMensaje("No he podido contactar con el servidor.", "mal"); }
+  finally { authTrabajando(false); }
+};
+
+// ── contraseña nueva desde el enlace del correo ──
+$("formReset").onsubmit = async (e) => {
+  e.preventDefault();
+  const pass = $("rsPass").value;
+  if (pass !== $("rsPass2").value) return authMensaje("Las dos contraseñas no coinciden.", "mal");
+  if (pass.length < MIN_PASS) return authMensaje(`La contraseña necesita al menos ${MIN_PASS} caracteres.`, "mal");
+  authTrabajando(true);
+  try {
+    const salt = salAleatoria();
+    const dk = await derivar(pass, salt, KDF_DEFAULT);
+    const r = await pedir("reset", { token: tokenReset, salt, dk, iterations: KDF_DEFAULT });
+    if (r.ok) {
+      tokenReset = null;
+      history.replaceState(null, "", location.pathname);
+      mostrarAuth("login", "Contraseña cambiada. Ya puedes entrar con ella.", "bien");
+      return;
+    }
+    authMensaje(r.data.error || "No he podido guardar la contraseña.", "mal");
+  } catch { authMensaje("No he podido contactar con el servidor.", "mal"); }
+  finally { authTrabajando(false); }
+};
+
+$("irRegistro").onclick = () => mostrarAuth("registro");
+$("irLogin").onclick    = () => mostrarAuth("login");
+$("irLogin2").onclick   = () => mostrarAuth("login");
+$("irOlvide").onclick   = () => mostrarAuth("olvide");
+
+$("btnSalir").onclick = async () => {
+  await fetch(`${API}/api/auth/logout`, { method: "POST" }).catch(() => {});
+  S.turns = [];
+  guardarTurnos();
+  $("log").innerHTML = "";
+  mostrarAuth("login", "Sesión cerrada.", "info");
+};
+
+// ── arranque de la sesión ──
+async function arrancarSesion() {
+  const params = new URLSearchParams(location.search);
+  const aviso = params.get("aviso");
+
+  // Viene del enlace de "he olvidado mi contraseña"
+  const reset = params.get("reset");
+  if (reset) {
+    const r = await pedir("reset-info", { token: reset });
+    if (r.ok) {
+      tokenReset = reset;
+      mostrarAuth("reset", `Hola de nuevo, ${r.data.username}. Elige una contraseña nueva.`, "info");
+      return;
+    }
+    history.replaceState(null, "", location.pathname);
+    mostrarAuth("login", r.data.error || "Ese enlace ya no vale.", "mal");
+    return;
+  }
+
+  if (aviso) history.replaceState(null, "", location.pathname);
+
+  const avisos = {
+    "cuenta-confirmada": ["Correo confirmado. Ya puedes entrar.", "bien"],
+    "enlace-caducado": ["Ese enlace ya no vale. Pide otro.", "mal"],
+    "correo-cambiado": ["Correo cambiado. A partir de ahora entra con el nuevo.", "bien"],
+    "correo-ocupado": ["No he podido cambiarlo: esa dirección ya está en uso.", "mal"],
+  };
+  const [texto, clase] = avisos[aviso] || [null, null];
+
+  const res = await fetch(`${API}/api/auth/me`).catch(() => null);
+  if (res && res.ok) {
+    const d = await res.json();
+    entrar(d.usuario);
+    if (texto) { abrirAjustes(); ajMensaje(texto, clase); }
+    return;
+  }
+
+  mostrarAuth("login", texto, clase);
+}
+
+// ─── Autocompletado de cartas ─────────────────────────────────────────────────
+// Se dispara al escribir dentro de unos corchetes dobles sin cerrar. Busca en
+// nuestro índice de nombres traducidos (Scryfall solo autocompleta en inglés).
+let sugActuales = [], sugElegida = -1, sugTemporizador = null, sugUltima = "";
+
+/** Si el cursor está dentro de un [[ sin cerrar, devuelve lo escrito. */
+function consultaAbierta() {
+  const t = $("q");
+  const antes = t.value.slice(0, t.selectionStart);
+  const abre = antes.lastIndexOf("[[");
+  if (abre === -1) return null;
+  const trozo = antes.slice(abre + 2);
+  if (trozo.includes("]]") || trozo.includes("\n")) return null;
+  return { desde: abre + 2, texto: trozo };
+}
+
+function cerrarSugerencias() {
+  sugActuales = []; sugElegida = -1;
+  $("sugerencias").innerHTML = "";
+}
+
+function pintarSugerencias() {
+  if (!sugActuales.length) return cerrarSugerencias();
+  $("sugerencias").innerHTML =
+    `<div class="sugerencias" role="listbox">${sugActuales.map((c, i) =>
+      `<button class="sug" type="button" role="option" data-i="${i}"
+               aria-selected="${i === sugElegida}">
+         <b>${esc(c.nombre)}</b>${c.lang !== "en" ? `<em>${esc(c.ingles)}</em>` : ""}
+       </button>`).join("")}</div>`;
+  $("sugerencias").querySelectorAll("[data-i]").forEach((b) => {
+    b.onmousedown = (e) => { e.preventDefault(); aceptarSugerencia(+b.dataset.i); };
+  });
+}
+
+function aceptarSugerencia(i) {
+  const c = sugActuales[i];
+  const abierta = consultaAbierta();
+  if (!c || !abierta) return cerrarSugerencias();
+  const t = $("q");
+  const fin = t.selectionStart;
+  t.value = t.value.slice(0, abierta.desde) + c.nombre + "]] " + t.value.slice(fin);
+  const cursor = abierta.desde + c.nombre.length + 3;
+  t.setSelectionRange(cursor, cursor);
+  cerrarSugerencias();
+  autogrow();
+  t.focus();
+}
+
+async function buscarSugerencias() {
+  const abierta = consultaAbierta();
+  if (!abierta || abierta.texto.trim().length < 2) return cerrarSugerencias();
+  const q = abierta.texto.trim();
+  if (q === sugUltima) return;
+  sugUltima = q;
+  try {
+    const res = await fetch(`${API}/api/cards/suggest?q=${encodeURIComponent(q)}`);
+    if (!res.ok) return cerrarSugerencias();
+    const d = await res.json();
+    // Puede haber llegado tarde: comprobamos que sigue valiendo
+    const ahora = consultaAbierta();
+    if (!ahora || ahora.texto.trim() !== q) return;
+    sugActuales = d.sugerencias || [];
+    sugElegida = sugActuales.length ? 0 : -1;
+    pintarSugerencias();
+  } catch { cerrarSugerencias(); }
+}
+
+// ─── Ajustes ──────────────────────────────────────────────────────────────────
+function ajMensaje(texto, clase = "info") {
+  $("ajMsg").innerHTML = texto ? `<div class="msg ${clase}">${esc(texto)}</div>` : "";
+}
+
+function fecha(ts) {
+  return new Date(ts * 1000).toLocaleDateString("es-ES",
+    { day: "numeric", month: "long", year: "numeric" });
+}
+
+function pintarAjustes() {
+  const u = S.usuario || {};
+  $("ajQuien").textContent = `Sesión de ${u.username || ""} · ${u.email || ""}`;
+  $("ajLang").value = u.lang || "es";
+  $("ajUsuario").value = u.username || "";
+  const proximo = u.puede_cambiar_usuario_el || 0;
+  $("ajCuandoUsuario").textContent = proximo > Date.now() / 1000
+    ? `Ya lo cambiaste hace poco. Podrás volver a hacerlo el ${fecha(proximo)}.`
+    : "Solo se puede cambiar una vez cada 30 días. El nombre que dejes libre podrá cogerlo otra persona.";
+  $("ajGuardarUsuario").disabled = proximo > Date.now() / 1000;
+}
+
+function abrirAjustes() {
+  ajMensaje("");
+  pintarAjustes();
+  $("ajustes").classList.remove("hidden");
+  $("chat").classList.add("hidden");
+  $("setup").classList.add("hidden");
+  $("composer").classList.add("hidden");
+  ["btnChange", "btnNew", "btnAjustes"].forEach((b) => $(b).classList.add("hidden"));
+}
+
+function cerrarAjustes() {
+  $("ajustes").classList.add("hidden");
+  if (S.format) { abrirChat(); } else { $("setup").classList.remove("hidden"); }
+}
+
+$("ajGuardarLang").onclick = async () => {
+  const r = await pedir("lang", { lang: $("ajLang").value });
+  if (r.ok) { S.usuario.lang = r.data.lang; ajMensaje("Idioma guardado.", "bien"); }
+  else ajMensaje(r.data.error || "No he podido guardarlo.", "mal");
+};
+
+$("ajGuardarUsuario").onclick = async () => {
+  const nuevo = $("ajUsuario").value.trim();
+  if (!nuevo) return;
+  const r = await pedir("username", { username: nuevo });
+  if (r.ok) {
+    S.usuario.username = r.data.username;
+    S.usuario.puede_cambiar_usuario_el = r.data.puede_cambiar_usuario_el;
+    pintarAjustes();
+    ajMensaje("Nombre cambiado.", "bien");
+  } else ajMensaje(r.data.error || "No he podido cambiarlo.", "mal");
+};
+
+$("ajBorrar").onclick = async () => {
+  const pass = $("ajPass").value;
+  if (!pass) return ajMensaje("Escribe tu contraseña para confirmar.", "mal");
+  if (!confirm("¿Seguro? Se borrará tu cuenta y no se puede deshacer.")) return;
+  ajMensaje("Comprobando la contraseña…");
+  try {
+    const sal = await pedir("salt", { login: S.usuario.username });
+    const dk = await derivar(pass, sal.data.salt, sal.data.iterations || KDF_DEFAULT);
+    const r = await pedir("delete", { dk });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido borrarla.", "mal");
+    localStorage.removeItem("mtg.turns");
+    S.turns = []; S.usuario = null;
+    $("log").innerHTML = "";
+    $("ajustes").classList.add("hidden");
+    $("ajPass").value = "";
+    mostrarAuth("login", "Tu cuenta ha sido borrada.", "info");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+/** Deriva una contraseña con la sal actual del usuario, para comprobarla. */
+async function derivarConSalActual(pass) {
+  const sal = await pedir("salt", { login: S.usuario.username });
+  return derivar(pass, sal.data.salt, sal.data.iterations || KDF_DEFAULT);
+}
+
+$("ajGuardarPass").onclick = async () => {
+  const vieja = $("ajPassVieja").value;
+  const nueva = $("ajPassNueva").value;
+  if (!vieja || !nueva) return ajMensaje("Rellena las tres casillas.", "mal");
+  if (nueva !== $("ajPassNueva2").value) return ajMensaje("Las dos contraseñas nuevas no coinciden.", "mal");
+  if (nueva.length < MIN_PASS) return ajMensaje(`La contraseña necesita al menos ${MIN_PASS} caracteres.`, "mal");
+  if (nueva === vieja) return ajMensaje("La nueva es igual que la actual.", "mal");
+  ajMensaje("Cifrando…");
+  try {
+    const dk_actual = await derivarConSalActual(vieja);
+    const salt = salAleatoria();
+    const dk = await derivar(nueva, salt, KDF_DEFAULT);
+    const r = await pedir("password", { dk_actual, salt, dk, iterations: KDF_DEFAULT });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido cambiarla.", "mal");
+    $("ajPassVieja").value = $("ajPassNueva").value = $("ajPassNueva2").value = "";
+    ajMensaje("Contraseña cambiada. Las sesiones de tus otros dispositivos se han cerrado.", "bien");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+$("ajGuardarMail").onclick = async () => {
+  const email = $("ajMail").value.trim();
+  const pass = $("ajMailPass").value;
+  if (!email || !pass) return ajMensaje("Rellena el correo y la contraseña.", "mal");
+  ajMensaje("Cifrando…");
+  try {
+    const dk = await derivarConSalActual(pass);
+    const r = await pedir("email", { email, dk });
+    if (!r.ok) return ajMensaje(r.data.error || "No he podido cambiarlo.", "mal");
+    $("ajMail").value = $("ajMailPass").value = "";
+    ajMensaje(`Te he escrito a ${S.usuario.email}, tu dirección actual. Pulsa el enlace para confirmar el cambio.`, "bien");
+  } catch { ajMensaje("No he podido contactar con el servidor.", "mal"); }
+};
+
+$("ajVolver").onclick = cerrarAjustes;
+$("btnAjustes").onclick = abrirAjustes;
+
+// ─── Guía de bienvenida ───────────────────────────────────────────────────────
+// Seis pasos. Se enseña la primera vez que alguien entra y se puede omitir en
+// cualquier momento. Que se ha visto se guarda en la cuenta, no en el
+// navegador, para que no reaparezca al entrar desde otro dispositivo.
+const SEAL_MINI = '<svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>';
+let pasoActual = 0;
+
+const PASOS = [
+  {
+    titulo: "Soy tu juez de reglas",
+    ilustracion: `<div class="fila">${SEAL_MINI}<span>Comprehensive Rules oficiales</span></div>`,
+    texto: `<p>Resuelvo dudas apoyándome en las reglas oficiales de Magic, las mismas
+            que maneja un juez de torneo. No respondo de memoria: busco la regla que
+            aplica y te la enseño.</p>`,
+  },
+  {
+    titulo: "Primero, el formato",
+    ilustracion: `<div class="fila"><span class="falso">Commander</span></div>
+                  <div class="fila"><span class="falso gris">Constructed 1 contra 1</span></div>
+                  <div class="fila"><span class="falso gris">Gigante de dos cabezas</span></div>`,
+    texto: `<p>Las reglas cambian según cómo juguéis. Commander tiene daño de comandante
+            y zona de mando; en gigante de dos cabezas se comparten las vidas. Dímelo
+            una vez y no vuelvo a preguntar.</p>
+            <p>Si jugáis Commander, puedes escribir también vuestros acuerdos de mesa.</p>`,
+  },
+  {
+    titulo: "Enseño de dónde saco cada cosa",
+    ilustracion: `<p style="margin:0 0 9px;font-size:14px">Pasan 3 puntos de daño al jugador
+                  <button class="cite" type="button" id="tourChip" aria-expanded="false">702.19b</button>.</p>
+                  <div class="source hidden" id="tourFuente" style="border-top:1px solid var(--rule);margin-top:9px;padding-top:9px">
+                    <span class="id">702.19b</span>El controlador de una criatura atacante con
+                    arrollar asigna primero daño a las criaturas que la bloquean…
+                  </div>`,
+    texto: `<p><strong>Pruébalo: pulsa el número de ahí arriba.</strong> Se abre el texto
+            literal de la regla.</p>
+            <p>Y esto es lo importante: <strong>si un número sale en gris y no se abre, es
+            que me lo he inventado</strong>. Los modelos de lenguaje fallan en los casos
+            raros con mucho aplomo, así que esa es tu forma de pillarme.</p>`,
+  },
+  {
+    titulo: "Nombra cartas con dobles corchetes",
+    ilustracion: `<div class="fila"><span class="falso">¿[[Sra. Marg</span></div>
+                  <div class="fila"><span class="falso gris">Sra. Margarita &nbsp;·&nbsp; Ms. Bumbleflower</span></div>`,
+    texto: `<p>Escribe <strong>[[</strong> y el nombre de la carta. Te salen sugerencias
+            mientras escribes, también en castellano.</p>
+            <p>Traigo el texto oficial, los rulings de Wizards y si la carta es legal en
+            vuestro formato.</p>`,
+  },
+  {
+    titulo: "Si me falta un dato, pregunto",
+    ilustracion: `<div class="fila"><span class="falso">La criatura atacante tiene 3 de fuerza.</span></div>
+                  <div class="fila"><span class="falso">La criatura atacante tiene 4 de fuerza.</span></div>`,
+    texto: `<p>Cuando la respuesta dependa de algo que no me has contado, te doy opciones
+            para elegir en vez de inventarme la situación. Pulsa una y sigo.</p>`,
+  },
+  {
+    titulo: "Y recuerdo la conversación",
+    ilustracion: `<div class="fila"><span class="falso gris">…y si el bloqueador tuviera protección?</span></div>`,
+    texto: `<p>Puedes matizar, corregirme o darme más datos: sigo el hilo. El botón
+            <em>Nueva consulta</em> lo borra y empieza de cero.</p>
+            <p>En <em>Ajustes</em> cambias el idioma de mis respuestas, la contraseña y el correo.</p>
+            <p style="color:var(--alert);font-style:italic">En un torneo manda el juez humano,
+            no yo. Para partidas de casa, adelante.</p>`,
+  },
+];
+
+function pintarTour() {
+  const p = PASOS[pasoActual];
+  const ultimo = pasoActual === PASOS.length - 1;
+  $("tour").innerHTML = `
+    <div class="tour-fondo" role="dialog" aria-modal="true" aria-label="Guía de bienvenida">
+      <div class="tour-carta">
+        <div class="tour-cab">${SEAL_MINI}Guía rápida<span>${pasoActual + 1} de ${PASOS.length}</span></div>
+        <div class="tour-caja">
+          <h2>${p.titulo}</h2>
+          ${p.ilustracion ? `<div class="tour-ilu">${p.ilustracion}</div>` : ""}
+          ${p.texto}
+        </div>
+        <div class="tour-pies">
+          <div class="tour-puntos">${PASOS.map((_, i) =>
+            `<i class="punto${i === pasoActual ? " hoy" : ""}"></i>`).join("")}</div>
+          ${pasoActual > 0 ? '<button class="tour-atras" id="tourAtras">Atrás</button>' : ""}
+          <button class="tour-sig" id="tourSig">${ultimo ? "Empezar" : "Siguiente"}</button>
+        </div>
+        <div style="text-align:center">
+          <button class="tour-omitir" id="tourOmitir">${ultimo ? "Cerrar" : "Omitir la guía"}</button>
+        </div>
+      </div>
+    </div>`;
+
+  $("tourSig").onclick = () => {
+    if (ultimo) return cerrarTour();
+    pasoActual++; pintarTour();
+  };
+  if ($("tourAtras")) $("tourAtras").onclick = () => { pasoActual--; pintarTour(); };
+  $("tourOmitir").onclick = cerrarTour;
+
+  // El paso de las citas se puede tocar: se aprende mejor pulsando
+  const chip = $("tourChip");
+  if (chip) chip.onclick = () => {
+    const oculto = $("tourFuente").classList.toggle("hidden");
+    chip.setAttribute("aria-expanded", String(!oculto));
+  };
+
+  $("tourSig").focus();
+}
+
+async function cerrarTour() {
+  $("tour").innerHTML = "";
+  document.body.style.overflow = "";
+  if (S.usuario) S.usuario.tour_visto = true;
+  await pedir("tour", { visto: true }).catch(() => {});
+}
+
+function abrirTour() {
+  pasoActual = 0;
+  document.body.style.overflow = "hidden";
+  pintarTour();
+}
+
+addEventListener("keydown", (e) => {
+  if (!$("tour").innerHTML) return;
+  if (e.key === "Escape") { e.preventDefault(); cerrarTour(); }
+  if (e.key === "ArrowRight" && $("tourSig")) $("tourSig").click();
+  if (e.key === "ArrowLeft" && $("tourAtras")) $("tourAtras").click();
+});
+
+$("ajTour").onclick = () => { cerrarAjustes(); abrirTour(); };
+
+// ─── Instalación ──────────────────────────────────────────────────────────────
+let promptInstalar = null;
+addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  promptInstalar = e;
+  $("install").style.display = "block";
+});
+$("install").onclick = async () => {
+  if (!promptInstalar) return;
+  promptInstalar.prompt();
+  await promptInstalar.userChoice;
+  promptInstalar = null;
+  $("install").style.display = "none";
+};
+
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+
+// ─── Pie ──────────────────────────────────────────────────────────────────────
+fetch(`${API}/api/health`)
+  .then((r) => r.json())
+  .then((d) => {
+    const quien = d.usuario ? `Sesión de ${d.usuario}. ` : "";
+    $("foot").textContent =
+      `${quien}Comprehensive Rules vigentes desde ${d.reglas?.effective || "?"} · ` +
+      `${d.reglas?.rule_count || 0} reglas indexadas. ` +
+      `Esto no sustituye a un juez en torneo.`;
+  })
+  .catch(() => {
+    $("foot").textContent = "Esto no sustituye a un juez en torneo.";
+  });
+</script>
+</body>
+</html>

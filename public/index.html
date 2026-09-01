@@ -323,6 +323,74 @@ button.cite:hover,button.cite[aria-expanded="true"]{
 }
 .peligroso:hover{background:rgba(138,52,25,.14)}
 
+
+/* ── guía de bienvenida ─────────────────────────────────── */
+.tour-fondo{
+  position:fixed; inset:0; z-index:100; display:flex; align-items:center;
+  justify-content:center; padding:18px;
+  background:rgba(10,7,4,.82); backdrop-filter:blur(3px);
+}
+.tour-carta{
+  width:100%; max-width:430px;
+  background:linear-gradient(158deg, var(--frame-hi) 0%, var(--frame) 45%, var(--frame-lo) 100%);
+  border:1px solid var(--edge); border-radius:13px; padding:8px;
+  box-shadow:0 0 0 1px rgba(235,215,155,.26) inset, 0 16px 44px rgba(0,0,0,.6);
+  max-height:calc(100dvh - 36px); display:flex; flex-direction:column;
+}
+.tour-cab{
+  display:flex; align-items:center; gap:8px; padding:4px 8px 9px;
+  font-family:var(--display); font-size:11px; font-weight:600;
+  letter-spacing:.22em; text-transform:uppercase; color:var(--gold-hi);
+}
+.tour-cab .seal{width:16px; height:16px}
+.tour-cab span{margin-left:auto; opacity:.55; letter-spacing:.12em; font-size:10.5px}
+.tour-caja{
+  background:var(--grain), linear-gradient(var(--parch),var(--parch-2));
+  background-blend-mode:multiply,normal;
+  border:1px solid var(--edge); border-radius:5px; padding:18px;
+  color:var(--ink); overflow-y:auto;
+  box-shadow:0 1px 0 rgba(255,255,255,.45) inset;
+}
+.tour-caja h2{
+  font-family:var(--display); font-size:19px; font-weight:600;
+  margin:0 0 10px; color:#3B2F13;
+}
+.tour-caja p{margin:0 0 12px; font-size:15px}
+.tour-caja p:last-child{margin-bottom:0}
+.tour-ilu{
+  border:1px dashed var(--rule); border-radius:5px;
+  padding:13px; margin:0 0 14px; background:rgba(255,255,255,.4);
+}
+.tour-ilu .fila{display:flex; align-items:center; gap:7px; margin-bottom:6px; font-size:13.5px}
+.tour-ilu .fila:last-child{margin-bottom:0}
+.tour-ilu .falso{
+  border:1px solid var(--rule); border-radius:4px; padding:5px 9px;
+  background:linear-gradient(#F8F1DE,#EADEC2); font-size:13px; flex:1;
+}
+.tour-ilu .gris{color:#8C8271; font-style:italic}
+.tour-pies{display:flex; align-items:center; gap:10px; padding:11px 4px 3px}
+.tour-puntos{display:flex; gap:5px; margin-right:auto}
+.punto{width:6px; height:6px; border-radius:50%; background:rgba(235,215,155,.28)}
+.punto.hoy{background:var(--gold)}
+.tour-omitir{
+  background:none; border:none; color:var(--gold-hi); opacity:.75;
+  font-family:var(--display); font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; padding:7px 4px; text-decoration:underline;
+  text-underline-offset:4px;
+}
+.tour-atras{
+  background:none; border:1px solid var(--gold-lo); border-radius:5px;
+  color:var(--gold); padding:9px 15px;
+  font-family:var(--display); font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+}
+.tour-sig{
+  border:1px solid var(--edge); border-radius:5px; padding:9px 19px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%);
+  color:#181207; font-family:var(--display); font-weight:700;
+  font-size:11.5px; letter-spacing:.14em; text-transform:uppercase;
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset;
+}
+
 /* ── barra de escritura ─────────────────────────────────── */
 .composer{
   position:sticky; bottom:0;
@@ -537,6 +605,12 @@ footer{
       <button class="peligroso" id="ajBorrar">Borrar mi cuenta para siempre</button>
     </div>
 
+    <div class="bloque">
+      <h2>Guía</h2>
+      <p>Vuelve a ver la explicación de cómo funciona el juez.</p>
+      <button class="secundario" id="ajTour">Ver la guía otra vez</button>
+    </div>
+
     <div class="switch"><button type="button" id="ajVolver">Volver al juez</button></div>
   </section>
 
@@ -552,6 +626,8 @@ footer{
     <button class="send" id="btnSend">Enviar</button>
   </div>
 </div>
+
+<div id="tour"></div>
 
 <footer>
   <button id="install">Instalar la app</button>
@@ -975,6 +1051,8 @@ function entrar(usuario) {
   $("btnSalir").classList.remove("hidden");
   if (S.format) { abrirChat(); if (S.turns.length) { repintar(); scroll(); } }
   else { $("setup").classList.remove("hidden"); }
+  // Primera vez que entra: le explicamos cómo va esto
+  if (usuario && !usuario.tour_visto) abrirTour();
 }
 
 // ── inicio de sesión ──
@@ -1294,6 +1372,135 @@ $("ajGuardarMail").onclick = async () => {
 
 $("ajVolver").onclick = cerrarAjustes;
 $("btnAjustes").onclick = abrirAjustes;
+
+// ─── Guía de bienvenida ───────────────────────────────────────────────────────
+// Seis pasos. Se enseña la primera vez que alguien entra y se puede omitir en
+// cualquier momento. Que se ha visto se guarda en la cuenta, no en el
+// navegador, para que no reaparezca al entrar desde otro dispositivo.
+const SEAL_MINI = '<svg width="20" height="20" viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>';
+let pasoActual = 0;
+
+const PASOS = [
+  {
+    titulo: "Soy tu juez de reglas",
+    ilustracion: `<div class="fila">${SEAL_MINI}<span>Comprehensive Rules oficiales</span></div>`,
+    texto: `<p>Resuelvo dudas apoyándome en las reglas oficiales de Magic, las mismas
+            que maneja un juez de torneo. No respondo de memoria: busco la regla que
+            aplica y te la enseño.</p>`,
+  },
+  {
+    titulo: "Primero, el formato",
+    ilustracion: `<div class="fila"><span class="falso">Commander</span></div>
+                  <div class="fila"><span class="falso gris">Constructed 1 contra 1</span></div>
+                  <div class="fila"><span class="falso gris">Gigante de dos cabezas</span></div>`,
+    texto: `<p>Las reglas cambian según cómo juguéis. Commander tiene daño de comandante
+            y zona de mando; en gigante de dos cabezas se comparten las vidas. Dímelo
+            una vez y no vuelvo a preguntar.</p>
+            <p>Si jugáis Commander, puedes escribir también vuestros acuerdos de mesa.</p>`,
+  },
+  {
+    titulo: "Enseño de dónde saco cada cosa",
+    ilustracion: `<p style="margin:0 0 9px;font-size:14px">Pasan 3 puntos de daño al jugador
+                  <button class="cite" type="button" id="tourChip" aria-expanded="false">702.19b</button>.</p>
+                  <div class="source hidden" id="tourFuente" style="border-top:1px solid var(--rule);margin-top:9px;padding-top:9px">
+                    <span class="id">702.19b</span>El controlador de una criatura atacante con
+                    arrollar asigna primero daño a las criaturas que la bloquean…
+                  </div>`,
+    texto: `<p><strong>Pruébalo: pulsa el número de ahí arriba.</strong> Se abre el texto
+            literal de la regla.</p>
+            <p>Y esto es lo importante: <strong>si un número sale en gris y no se abre, es
+            que me lo he inventado</strong>. Los modelos de lenguaje fallan en los casos
+            raros con mucho aplomo, así que esa es tu forma de pillarme.</p>`,
+  },
+  {
+    titulo: "Nombra cartas con dobles corchetes",
+    ilustracion: `<div class="fila"><span class="falso">¿[[Sra. Marg</span></div>
+                  <div class="fila"><span class="falso gris">Sra. Margarita &nbsp;·&nbsp; Ms. Bumbleflower</span></div>`,
+    texto: `<p>Escribe <strong>[[</strong> y el nombre de la carta. Te salen sugerencias
+            mientras escribes, también en castellano.</p>
+            <p>Traigo el texto oficial, los rulings de Wizards y si la carta es legal en
+            vuestro formato.</p>`,
+  },
+  {
+    titulo: "Si me falta un dato, pregunto",
+    ilustracion: `<div class="fila"><span class="falso">La criatura atacante tiene 3 de fuerza.</span></div>
+                  <div class="fila"><span class="falso">La criatura atacante tiene 4 de fuerza.</span></div>`,
+    texto: `<p>Cuando la respuesta dependa de algo que no me has contado, te doy opciones
+            para elegir en vez de inventarme la situación. Pulsa una y sigo.</p>`,
+  },
+  {
+    titulo: "Y recuerdo la conversación",
+    ilustracion: `<div class="fila"><span class="falso gris">…y si el bloqueador tuviera protección?</span></div>`,
+    texto: `<p>Puedes matizar, corregirme o darme más datos: sigo el hilo. El botón
+            <em>Nueva consulta</em> lo borra y empieza de cero.</p>
+            <p>En <em>Ajustes</em> cambias el idioma de mis respuestas, la contraseña y el correo.</p>
+            <p style="color:var(--alert);font-style:italic">En un torneo manda el juez humano,
+            no yo. Para partidas de casa, adelante.</p>`,
+  },
+];
+
+function pintarTour() {
+  const p = PASOS[pasoActual];
+  const ultimo = pasoActual === PASOS.length - 1;
+  $("tour").innerHTML = `
+    <div class="tour-fondo" role="dialog" aria-modal="true" aria-label="Guía de bienvenida">
+      <div class="tour-carta">
+        <div class="tour-cab">${SEAL_MINI}Guía rápida<span>${pasoActual + 1} de ${PASOS.length}</span></div>
+        <div class="tour-caja">
+          <h2>${p.titulo}</h2>
+          ${p.ilustracion ? `<div class="tour-ilu">${p.ilustracion}</div>` : ""}
+          ${p.texto}
+        </div>
+        <div class="tour-pies">
+          <div class="tour-puntos">${PASOS.map((_, i) =>
+            `<i class="punto${i === pasoActual ? " hoy" : ""}"></i>`).join("")}</div>
+          ${pasoActual > 0 ? '<button class="tour-atras" id="tourAtras">Atrás</button>' : ""}
+          <button class="tour-sig" id="tourSig">${ultimo ? "Empezar" : "Siguiente"}</button>
+        </div>
+        <div style="text-align:center">
+          <button class="tour-omitir" id="tourOmitir">${ultimo ? "Cerrar" : "Omitir la guía"}</button>
+        </div>
+      </div>
+    </div>`;
+
+  $("tourSig").onclick = () => {
+    if (ultimo) return cerrarTour();
+    pasoActual++; pintarTour();
+  };
+  if ($("tourAtras")) $("tourAtras").onclick = () => { pasoActual--; pintarTour(); };
+  $("tourOmitir").onclick = cerrarTour;
+
+  // El paso de las citas se puede tocar: se aprende mejor pulsando
+  const chip = $("tourChip");
+  if (chip) chip.onclick = () => {
+    const oculto = $("tourFuente").classList.toggle("hidden");
+    chip.setAttribute("aria-expanded", String(!oculto));
+  };
+
+  $("tourSig").focus();
+}
+
+async function cerrarTour() {
+  $("tour").innerHTML = "";
+  document.body.style.overflow = "";
+  if (S.usuario) S.usuario.tour_visto = true;
+  await pedir("tour", { visto: true }).catch(() => {});
+}
+
+function abrirTour() {
+  pasoActual = 0;
+  document.body.style.overflow = "hidden";
+  pintarTour();
+}
+
+addEventListener("keydown", (e) => {
+  if (!$("tour").innerHTML) return;
+  if (e.key === "Escape") { e.preventDefault(); cerrarTour(); }
+  if (e.key === "ArrowRight" && $("tourSig")) $("tourSig").click();
+  if (e.key === "ArrowLeft" && $("tourAtras")) $("tourAtras").click();
+});
+
+$("ajTour").onclick = () => { cerrarAjustes(); abrirTour(); };
 
 // ─── Instalación ──────────────────────────────────────────────────────────────
 let promptInstalar = null;

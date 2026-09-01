@@ -138,7 +138,8 @@ export async function usuarioActual(request, env) {
   const token = leerCookie(request);
   if (!token) return null;
   const fila = await env.DB.prepare(
-    "SELECT u.id, u.username, u.email, u.lang, u.username_changed_at, u.created_at, s.expires_at " +
+    "SELECT u.id, u.username, u.email, u.lang, u.username_changed_at, u.created_at, " +
+    "u.tour_visto, s.expires_at " +
     "FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ?"
   ).bind(await sha256hex(token)).first();
   if (!fila || fila.expires_at < ahora()) return null;
@@ -149,6 +150,7 @@ export async function usuarioActual(request, env) {
     lang: fila.lang || "es",
     username_changed_at: fila.username_changed_at,
     created_at: fila.created_at,
+    tour_visto: !!fila.tour_visto,
   };
 }
 
@@ -216,6 +218,17 @@ export async function manejarAuth(request, env, url) {
     const u = await usuarioActual(request, env);
     if (!u) return json({ error: "Sin sesión." }, 401);
     return json({ usuario: { ...u, puede_cambiar_usuario_el: proximoCambio(u) } });
+  }
+
+  // ── guía de bienvenida vista (o saltada) ───────────────────────────────────
+  // Se guarda en la cuenta, no en el navegador: así no reaparece al entrar
+  // desde el móvil, y volver a verla es una opción de Ajustes.
+  if (ruta === "tour" && request.method === "POST") {
+    const u = await usuarioActual(request, env);
+    if (!u) return json({ error: "Sin sesión." }, 401);
+    const visto = cuerpo.visto === false ? null : ahora();
+    await env.DB.prepare("UPDATE users SET tour_visto = ? WHERE id = ?").bind(visto, u.id).run();
+    return json({ ok: true, tour_visto: !!visto });
   }
 
   // ── ajustes: idioma de las respuestas ──────────────────────────────────────

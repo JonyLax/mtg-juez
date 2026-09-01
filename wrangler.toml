@@ -2,21 +2,23 @@ name = "mtg-juez"
 main = "src/index.js"
 compatibility_date = "2026-08-01"
 
-# El Worker sirve la web y la API a la vez. Cloudflare intenta primero servir un
-# fichero estatico de esta carpeta; si la ruta no coincide con ninguno (por
-# ejemplo /api/ask), ejecuta el codigo del Worker.
+# El Worker decide TODO el enrutado: la web comercial en mtg-juez.com con su
+# prefijo de idioma, y el chat en chat.mtg-juez.com. Por eso corre antes que
+# los ficheros estaticos, y los sirve el mismo cuando toca.
 [assets]
 directory = "./public"
+binding = "ASSETS"
+run_worker_first = true
 
 # Base de datos de usuarios. Crea una D1 llamada "juez" en el panel de
 # Cloudflare y pega aqui su identificador.
 [[d1_databases]]
 binding = "DB"
 database_name = "juez"
-database_id = "4925068d-13da-44ec-abe6-e4db292ae81b"
+database_id = "PEGA_AQUI_EL_ID_DE_TU_BASE_DE_DATOS"
 
 # Los secretos NO van aqui. Se ponen en el panel de Cloudflare:
 #   GEMINI_API_KEY  clave de Google AI Studio
 #   AUTH_PEPPER     cadena larga y aleatoria, la pimienta de las contrasenas
 #   RESEND_API_KEY  clave de Resend para enviar correos
-#   MAIL_FROM       remitente, p.ej. Juez <juez@tudominio.es>
+#   MAIL_FROM       remitente, p.ej. Juez <juez@mtg-juez.com>

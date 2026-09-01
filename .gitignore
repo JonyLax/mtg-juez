@@ -1,0 +1,15 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+
+# Se genera en cada despliegue, no hace falta versionarlo
+data/cr.json
+cards.sql
+
+# La web comercial se genera desde site/ en cada despliegue
+public/es/
+public/en/
+public/ca/
+public/sitemap.xml
+public/robots.txt

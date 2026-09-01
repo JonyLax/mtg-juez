@@ -61,6 +61,7 @@ header{
   display:flex; align-items:center; gap:10px;
 }
 .seal{width:30px; height:30px; flex:0 0 auto; display:block}
+.marca{display:flex; align-items:center; gap:10px; text-decoration:none}
 .wordmark{
   font-family:var(--display); font-weight:700; font-size:19px; letter-spacing:.24em;
   line-height:1; padding-top:2px;
@@ -80,7 +81,7 @@ header{
 }
 
 main{
-  flex:1; width:100%; max-width:680px; margin:0 auto;
+  flex:1; width:100%; max-width:840px; margin:0 auto;
   padding:26px max(14px,env(safe-area-inset-left)) 8px max(14px,env(safe-area-inset-right));
 }
 
@@ -399,7 +400,7 @@ button.cite:hover,button.cite[aria-expanded="true"]{
   box-shadow:0 -1px 0 rgba(235,215,155,.14), 0 -10px 24px rgba(0,0,0,.55);
   padding:11px max(14px,env(safe-area-inset-left)) max(11px,env(safe-area-inset-bottom));
 }
-.composer-inner{max-width:680px; margin:0 auto; display:flex; gap:9px; align-items:flex-end; position:relative}
+.composer-inner{max-width:840px; margin:0 auto; display:flex; gap:9px; align-items:flex-end; position:relative}
 .composer textarea{min-height:46px; max-height:160px; overflow-y:hidden; line-height:1.45}
 .send{
   border:1px solid var(--edge); border-radius:5px; padding:0 20px; height:46px;
@@ -411,7 +412,7 @@ button.cite:hover,button.cite[aria-expanded="true"]{
 }
 .send:disabled{opacity:.35}
 footer{
-  max-width:680px; margin:0 auto; padding:14px 14px 24px;
+  max-width:840px; margin:0 auto; padding:14px 14px 24px;
   font-size:12px; color:#7A6E58; font-style:italic; line-height:1.6; text-align:center;
 }
 #install{
@@ -441,8 +442,10 @@ footer{
 </svg>
 
 <header>
-  <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="Juez"><use href="#sealArt"/></svg>
-  <span class="wordmark">JUEZ</span>
+  <a class="marca" href="https://mtg-juez.com/" title="Ir a mtg-juez.com">
+    <svg class="seal" viewBox="0 0 64 64" role="img" aria-label="Juez"><use href="#sealArt"/></svg>
+    <span class="wordmark">JUEZ</span>
+  </a>
   <div class="ctx">
     <span class="ctx-label" id="ctxLabel"></span>
     <button class="linkbtn hidden" id="btnNew">Nueva consulta</button>

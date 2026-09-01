@@ -3,7 +3,7 @@ import { extractCardNames, fetchCards } from "./scryfall.js";
 import { FORMATS, systemPrompt, buildContext, RESPONSE_SCHEMA } from "./prompt.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
 import { sugerir } from "./cards.js";
-import { esSubdominioChat, servirWeb } from "./routing.js";
+import { esSubdominioChat, servirWeb, IDIOMAS_WEB } from "./routing.js";
 
 const MAX_QUESTION = 2000;
 const MAX_HISTORY = 8;
@@ -34,7 +34,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 13;
+const VERSION = 14;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -326,9 +326,21 @@ export default {
 
     if (url.pathname === "/api/health") {
       const sesion = env.DB ? await usuarioActual(request, env) : null;
+      // Comprobamos que la web comercial esta realmente publicada. Si el paso
+      // que la genera falla, aqui se ve enseguida en vez de dar un 404 mudo.
+      const web = {};
+      for (const l of IDIOMAS_WEB) {
+        try {
+          const r = await env.ASSETS.fetch(new URL(`/${l}/index.html`, url.origin));
+          web[l] = r.status;
+        } catch (e) {
+          web[l] = String(e).slice(0, 60);
+        }
+      }
       return json(env, {
         ok: true,
         version: VERSION,
+        web,
         cuentas: !!env.DB,
         usuario: sesion?.username || null,
         reglas: rulesMeta(),

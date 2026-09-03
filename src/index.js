@@ -10,6 +10,7 @@ import {
 } from "./deck.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
 import { sugerir } from "./cards.js";
+import { consumir, saldo } from "./limits.js";
 import { esSubdominioChat, servirWeb, IDIOMAS_WEB } from "./routing.js";
 
 const MAX_QUESTION = 2000;
@@ -41,7 +42,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 20;
+const VERSION = 21;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -496,6 +497,20 @@ async function mazo(request, env, usuario) {
   });
 }
 
+/** Cuela el saldo restante en la respuesta, para que la interfaz lo pinte. */
+async function conCupo(respuesta, cupo) {
+  if (cupo.sinControl || respuesta.status !== 200) return respuesta;
+  try {
+    const cuerpo = await respuesta.json();
+    return new Response(
+      JSON.stringify({ ...cuerpo, cupo: { restantes: cupo.restantes, limite: cupo.limite } }),
+      { status: 200, headers: respuesta.headers }
+    );
+  } catch {
+    return respuesta;
+  }
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -633,7 +648,12 @@ export default {
           u = await usuarioActual(request, env);
           if (!u) return json(env, { error: "Tu sesión ha caducado. Vuelve a entrar.", codigo: "sin-sesion" }, 401);
         }
-        return await mazo(request, env, u);
+        const cupoM = await consumir(env, u, "mazo");
+        if (!cupoM.ok) {
+          return json(env, { error: cupoM.mensaje, codigo: `cupo-${cupoM.motivo}`, cupo: cupoM }, 429);
+        }
+        const rm = await mazo(request, env, u);
+        return conCupo(rm, cupoM);
       } catch (e) {
         return json(env, { error: "Error interno.", detail: String(e).slice(0, 300) }, 500);
       }
@@ -649,7 +669,12 @@ export default {
             return json(env, { error: "Tu sesión ha caducado. Vuelve a entrar.", codigo: "sin-sesion" }, 401);
           }
         }
-        return await ask(request, env, usuarioSesion);
+        const cupo = await consumir(env, usuarioSesion, "reglas");
+        if (!cupo.ok) {
+          return json(env, { error: cupo.mensaje, codigo: `cupo-${cupo.motivo}`, cupo }, 429);
+        }
+        const r = await ask(request, env, usuarioSesion);
+        return conCupo(r, cupo);
       } catch (e) {
         return json(env, { error: "Error interno.", detail: String(e).slice(0, 300) }, 500);
       }

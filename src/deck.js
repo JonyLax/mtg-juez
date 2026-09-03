@@ -196,6 +196,116 @@ export function contextoDeCartas(resultados, combos, moneda = "eur") {
   return partes.join("\n");
 }
 
+// Tierras básicas: son las que rellenan el mazo hasta el número que exige el
+// formato, y las únicas que pueden repetirse sin límite.
+const BASICAS = {
+  W: "Plains", U: "Island", B: "Swamp", R: "Mountain", G: "Forest",
+};
+const NOMBRES_BASICAS = new Set(
+  Object.values(BASICAS).concat("Wastes").flatMap((n) => [n, `Snow-Covered ${n}`])
+);
+
+export const TAMANO_MAZO = {
+  commander: 100, duel: 60, "2hg": 60, casual: 60, limited: 40,
+};
+
+/** Parte una línea "2 Nombre De Carta" en cantidad y nombre. */
+function parsearLinea(linea) {
+  const m = String(linea).trim().match(/^(?:(\d+)\s*x?\s+)?(.+?)\s*$/i);
+  if (!m || !m[2]) return null;
+  return { cuantas: Number(m[1] || 1), nombre: m[2].replace(/\s*\(.*\)\s*$/, "").trim() };
+}
+
+/**
+ * Busca el precio real de una lista de cartas concretas.
+ *
+ * Scryfall admite varios nombres exactos en una misma consulta, así que 74
+ * cartas caben en cinco peticiones. Sin esto solo sabíamos el precio de las
+ * cartas que el modelo se molestaba en explicar, y el total salía muy por
+ * debajo del coste real del mazo.
+ */
+export async function preciosDe(nombres, moneda = "eur") {
+  const encontradas = new Map();
+  const lote = 15;
+
+  for (let i = 0; i < nombres.length; i += lote) {
+    const trozo = nombres.slice(i, i + lote);
+    const q = trozo.map((n) => `!"${n.replace(/"/g, "")}"`).join(" or ");
+    const datos = await scryfall(
+      `/cards/search?q=${encodeURIComponent(`(${q}) cheapest:${moneda}`)}&unique=cards`
+    );
+    for (const c of datos?.data || []) {
+      encontradas.set(c.name.toLowerCase(), resumir(c, moneda));
+    }
+    await sleep(120);
+  }
+  return encontradas;
+}
+
+/**
+ * Cuenta el mazo, corrige las tierras básicas hasta llegar al tamaño legal y
+ * devuelve la lista ya cuadrada. El modelo no sabe contar; esto sí.
+ */
+export function cuadrarMazo(lista, limites) {
+  const objetivo = TAMANO_MAZO[limites.formato] || 100;
+  const entradas = (lista || []).map(parsearLinea).filter(Boolean);
+
+  const noBasicas = entradas.filter((e) => !NOMBRES_BASICAS.has(e.nombre));
+  const basicas = entradas.filter((e) => NOMBRES_BASICAS.has(e.nombre));
+  const cuentaNoBasicas = noBasicas.reduce((s, e) => s + e.cuantas, 0);
+
+  let faltan = objetivo - cuentaNoBasicas;
+  const nota = [];
+
+  if (faltan < 0) {
+    nota.push(
+      `Sobran ${-faltan} cartas: el mazo debería tener ${objetivo} y hay ${cuentaNoBasicas} sin contar básicas.`
+    );
+    faltan = 0;
+  }
+
+  // Repartimos las básicas entre los colores del comandante, respetando la
+  // proporción que haya propuesto el modelo si la hay.
+  const colores = (limites.identidad || "").toUpperCase().split("").filter((c) => BASICAS[c]);
+  const nuevasBasicas = [];
+
+  if (faltan > 0) {
+    if (colores.length === 0) {
+      nuevasBasicas.push({ cuantas: faltan, nombre: "Wastes" });
+    } else {
+      const previas = new Map(basicas.map((b) => [b.nombre, b.cuantas]));
+      const totalPrevio = [...previas.values()].reduce((a, b) => a + b, 0) || 0;
+      let repartidas = 0;
+      colores.forEach((col, i) => {
+        const nombre = BASICAS[col];
+        const proporcion = totalPrevio
+          ? (previas.get(nombre) || 0) / totalPrevio
+          : 1 / colores.length;
+        const n = i === colores.length - 1
+          ? faltan - repartidas               // la última se lleva el resto exacto
+          : Math.round(faltan * proporcion);
+        repartidas += n;
+        if (n > 0) nuevasBasicas.push({ cuantas: n, nombre });
+      });
+    }
+  }
+
+  const finales = [...noBasicas, ...nuevasBasicas];
+  const total = finales.reduce((s, e) => s + e.cuantas, 0);
+  if (total !== objetivo) {
+    nota.push(`El mazo suma ${total} cartas y el formato pide ${objetivo}.`);
+  }
+
+  return {
+    entradas: finales,
+    lista: finales.map((e) => `${e.cuantas} ${e.nombre}`),
+    total,
+    objetivo,
+    basicas: nuevasBasicas.reduce((s, e) => s + e.cuantas, 0),
+    avisos: nota,
+  };
+}
+
 /** Comprueba el mazo propuesto contra los límites que pidió el jugador. */
 export function revisarMazo(cartas, limites) {
   const avisos = [];

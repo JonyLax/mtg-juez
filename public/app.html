@@ -452,6 +452,22 @@ button.cite:hover,button.cite[aria-expanded="true"]{
 }
 .cambiar-modo:hover{background:rgba(201,162,39,.1)}
 
+/* ── cupo diario ────────────────────────────────────────── */
+.cupo{
+  font-family:var(--display); font-size:11px; letter-spacing:.08em;
+  color:var(--gold-hi); opacity:.7; white-space:nowrap;
+}
+.cupo.poco{color:#E0A06A; opacity:1}
+.cupo.nada{color:#C4674A; opacity:1}
+@media (max-width:620px){ .cupo{display:none} }
+.sin-cupo{
+  text-align:center; padding:6px 0;
+}
+.sin-cupo h3{
+  font-family:var(--display); font-size:16px; color:var(--alert); margin:0 0 10px;
+}
+.sin-cupo p{font-size:15px; margin:0 0 6px}
+
 /* ── barra de escritura ─────────────────────────────────── */
 .composer{
   position:sticky; bottom:0;
@@ -511,6 +527,7 @@ footer{
       <button type="button" data-modo="reglas" aria-pressed="true">Reglas</button>
       <button type="button" data-modo="mazo" aria-pressed="false">Mazos</button>
     </div>
+    <span class="cupo hidden" id="cupo"></span>
     <span class="ctx-label" id="ctxLabel"></span>
     <button class="linkbtn hidden" id="btnNew">Nueva consulta</button>
     <button class="linkbtn hidden" id="btnChange">Cambiar</button>
@@ -673,6 +690,11 @@ footer{
     </div>
 
     <div class="bloque">
+      <h2>Tu plan</h2>
+      <p id="ajPlan">—</p>
+    </div>
+
+    <div class="bloque">
       <h2>Guía</h2>
       <p>Vuelve a ver la explicación de cómo funciona el juez.</p>
       <button class="secundario" id="ajTour">Ver la guía otra vez</button>
@@ -775,6 +797,7 @@ function abrirChat() {
   $("btnAjustes").classList.remove("hidden");
   $("modos").classList.remove("hidden");
   pintarModos();
+  if (S.cupo) pintarCupo(S.cupo);
   $("btnNew").classList.toggle("hidden", S.turns.length === 0);
   $("ctxLabel").textContent = contextLabel();
 }
@@ -914,6 +937,32 @@ function renderJudge(el, data) {
   el.querySelectorAll("[data-opt]").forEach((b) => {
     b.onclick = () => { el.querySelectorAll(".opts").forEach((o) => o.remove()); send(b.dataset.opt); };
   });
+}
+
+// ─── Cupo diario ──────────────────────────────────────────────────────────────
+// Se pinta siempre, no solo al agotarse: enterarte de que te has quedado sin
+// consultas justo cuando ibas a preguntar algo es la peor forma de saberlo.
+function pintarCupo(c) {
+  if (!c || c.limite == null) return $("cupo").classList.add("hidden");
+  S.cupo = c;
+  const el = $("cupo");
+  el.classList.remove("hidden", "poco", "nada");
+  if (c.restantes === 0) el.classList.add("nada");
+  else if (c.restantes <= Math.max(3, c.limite * 0.2)) el.classList.add("poco");
+  el.textContent = `${c.restantes} / ${c.limite}`;
+  el.title = `Te quedan ${c.restantes} consultas de ${c.limite} hoy. Se reinicia a medianoche.`;
+}
+
+function renderSinCupo(el, data) {
+  el.className = "turn-judge";
+  const esGlobal = data.codigo === "cupo-global";
+  el.innerHTML =
+    `<div class="card-title">${SEAL}Juez</div>` +
+    `<div class="textbox"><div class="sin-cupo">
+       <h3>${esGlobal ? "Cuota compartida agotada" : "Se te han acabado las consultas de hoy"}</h3>
+       <p>${esc(data.error || "")}</p>
+       ${!esGlobal ? '<p style="color:var(--ink-soft);font-style:italic">Una consulta de reglas cuenta 1; construir un mazo cuenta 3.</p>' : ""}
+     </div></div>`;
 }
 
 // ─── Modo mazo ────────────────────────────────────────────────────────────────
@@ -1092,6 +1141,12 @@ async function send(text) {
     });
     const data = await res.json();
 
+    if (res.status === 429 && String(data.codigo || "").startsWith("cupo")) {
+      renderSinCupo(pending, data);
+      if (data.cupo) pintarCupo({ restantes: 0, limite: data.cupo.limite });
+      S.busy = false; $("btnSend").disabled = false;
+      return;
+    }
     if (res.status === 401) {
       pending.remove();
       mostrarAuth("login", data.error || "Tu sesión ha caducado. Vuelve a entrar.", "mal");
@@ -1103,6 +1158,7 @@ async function send(text) {
     } else {
       if (data.modo === "mazo") renderMazo(pending, data);
       else renderJudge(pending, data);
+      if (data.cupo) pintarCupo(data.cupo);
       S.turns.push({ role: "juez", data });
     }
   } catch (e) {
@@ -1231,7 +1287,7 @@ function mostrarAuth(cual, mensaje, clase) {
   $("setup").classList.add("hidden");
   $("chat").classList.add("hidden");
   $("composer").classList.add("hidden");
-  ["btnChange", "btnNew", "btnSalir", "btnAjustes", "modos"].forEach((b) => $(b).classList.add("hidden"));
+  ["btnChange", "btnNew", "btnSalir", "btnAjustes", "modos", "cupo"].forEach((b) => $(b).classList.add("hidden"));
   $("ctxLabel").textContent = "";
 }
 
@@ -1385,6 +1441,7 @@ async function arrancarSesion() {
   const res = await fetch(`${API}/api/auth/me`).catch(() => null);
   if (res && res.ok) {
     const d = await res.json();
+    if (d.cupo) S.cupo = d.cupo;
     entrar(d.usuario);
     if (texto) { abrirAjustes(); ajMensaje(texto, clase); }
     return;
@@ -1480,6 +1537,10 @@ function pintarAjustes() {
     ? `Ya lo cambiaste hace poco. Podrás volver a hacerlo el ${fecha(proximo)}.`
     : "Solo se puede cambiar una vez cada 30 días. El nombre que dejes libre podrá cogerlo otra persona.";
   $("ajGuardarUsuario").disabled = proximo > Date.now() / 1000;
+  const c = S.cupo;
+  $("ajPlan").textContent = c
+    ? `Plan ${c.plan_nombre || c.plan || "Gratis"}. Hoy has usado ${c.usadas ?? (c.limite - c.restantes)} de ${c.limite} consultas. El contador se reinicia a medianoche.`
+    : "Plan Gratis.";
 }
 
 function abrirAjustes() {

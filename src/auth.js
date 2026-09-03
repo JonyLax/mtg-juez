@@ -1,4 +1,5 @@
 import { enviarVerificacion, enviarRestablecimiento, enviarCambioCorreo } from "./mail.js";
+import { saldo } from "./limits.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POR QUÉ LAS CONTRASEÑAS SE ESTIRAN EN EL NAVEGADOR
@@ -147,7 +148,7 @@ export async function usuarioActual(request, env) {
   if (!token) return null;
   const fila = await env.DB.prepare(
     "SELECT u.id, u.username, u.email, u.lang, u.username_changed_at, u.created_at, " +
-    "u.tour_visto, s.expires_at " +
+    "u.tour_visto, u.plan, s.expires_at " +
     "FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.hash = ?"
   ).bind(await sha256hex(token)).first();
   if (!fila || fila.expires_at < ahora()) return null;
@@ -159,6 +160,7 @@ export async function usuarioActual(request, env) {
     username_changed_at: fila.username_changed_at,
     created_at: fila.created_at,
     tour_visto: !!fila.tour_visto,
+    plan: fila.plan || "free",
   };
 }
 
@@ -225,7 +227,10 @@ export async function manejarAuth(request, env, url) {
   if (ruta === "me") {
     const u = await usuarioActual(request, env);
     if (!u) return json({ error: "Sin sesión." }, 401);
-    return json({ usuario: { ...u, puede_cambiar_usuario_el: proximoCambio(u) } });
+    return json({
+      usuario: { ...u, puede_cambiar_usuario_el: proximoCambio(u) },
+      cupo: await saldo(env, u),
+    });
   }
 
   // ── guía de bienvenida vista (o saltada) ───────────────────────────────────

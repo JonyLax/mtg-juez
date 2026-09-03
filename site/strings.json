@@ -97,7 +97,19 @@
     "cuentas_sub": "Empieza gratis. Si algún día se te queda corto, ahí estarán las otras.",
     "cta_gratis": "Empezar gratis",
     "cta_pro": "Avísame cuando esté",
-    "cta_tienda": "Hablar con nosotros"
+    "cta_tienda": "Hablar con nosotros",
+    "mazos_etiqueta": "Constructor de mazos",
+    "mazos_titulo": "Y te construye el mazo, sin inventarse las cartas",
+    "mazos_sub": "Dile el comandante, el presupuesto y el bracket. Te devuelve un mazo completo, explicado carta por carta, con la lista lista para pegar en Moxfield.",
+    "mazos_1_t": "Respeta tu presupuesto de verdad",
+    "mazos_1_d": "El precio es el de la impresión más barata, sumado sobre el mazo entero. Puede meterte una carta cara si la merece, siempre que el total cuadre.",
+    "mazos_2_t": "Cuenta las cartas por ti",
+    "mazos_2_d": "Cien en Commander, sesenta en constructed, cuarenta en limitado. Ajusta las tierras básicas hasta que el mazo sea legal, sin que tengas que revisarlo.",
+    "mazos_3_t": "Conoce los brackets",
+    "mazos_3_d": "Cuenta los game changers de la lista oficial de Wizards y no se pasa del nivel que le pidas. Si algo se sale, te lo dice.",
+    "mazos_4_t": "Combos comprobados",
+    "mazos_4_d": "Dile una carta que te guste y te dice con qué combina, con combos verificados y enlace para comprobarlos. No son intuiciones.",
+    "mazos_pie": "Las cartas salen de una búsqueda real en Scryfall. Si alguna no se puede confirmar, aparece tachada."
   },
   "en": {
     "lang": "en",
@@ -196,7 +208,19 @@
     "cuentas_sub": "Start free. If you ever outgrow it, the others are waiting.",
     "cta_gratis": "Start free",
     "cta_pro": "Notify me",
-    "cta_tienda": "Talk to us"
+    "cta_tienda": "Talk to us",
+    "mazos_etiqueta": "Deckbuilder",
+    "mazos_titulo": "It builds the deck too, without inventing cards",
+    "mazos_sub": "Give it your commander, your budget and your bracket. You get a complete deck, explained card by card, with a list ready to paste into Moxfield.",
+    "mazos_1_t": "It actually respects your budget",
+    "mazos_1_d": "Prices come from the cheapest printing, totalled across the whole deck. It can fit one expensive card if it earns its place, as long as the total adds up.",
+    "mazos_2_t": "It counts the cards for you",
+    "mazos_2_d": "A hundred in Commander, sixty in constructed, forty in limited. It adjusts the basic lands until the deck is legal, so you don't have to check.",
+    "mazos_3_t": "It knows the brackets",
+    "mazos_3_d": "It counts game changers from the official Wizards list and stays inside the level you asked for. If something breaks the limit, it tells you.",
+    "mazos_4_t": "Verified combos",
+    "mazos_4_d": "Name a card you like and it tells you what pairs with it, using verified combos with a link to check them. Not hunches.",
+    "mazos_pie": "Cards come from a real Scryfall search. Anything it can't confirm shows up struck through."
   },
   "ca": {
     "lang": "ca",
@@ -295,6 +319,18 @@
     "cuentas_sub": "Comença gratis. Si algun dia se't queda curt, allà hi seran els altres.",
     "cta_gratis": "Començar gratis",
     "cta_pro": "Avisa'm quan hi sigui",
-    "cta_tienda": "Parlar amb nosaltres"
+    "cta_tienda": "Parlar amb nosaltres",
+    "mazos_etiqueta": "Constructor de mazos",
+    "mazos_titulo": "I et construeix el mazo, sense inventar-se les cartes",
+    "mazos_sub": "Digues-li el comandant, el pressupost i el bracket. Et torna un mazo complet, explicat carta per carta, amb la llista a punt per enganxar a Moxfield.",
+    "mazos_1_t": "Respecta el teu pressupost de debò",
+    "mazos_1_d": "El preu és el de la impressió més barata, sumat sobre el mazo sencer. Pot posar-hi una carta cara si s'ho val, sempre que el total quadri.",
+    "mazos_2_t": "Compta les cartes per tu",
+    "mazos_2_d": "Cent a Commander, seixanta a constructed, quaranta a limitat. Ajusta les terres bàsiques fins que el mazo sigui legal, sense que hagis de revisar-ho.",
+    "mazos_3_t": "Coneix els brackets",
+    "mazos_3_d": "Compta els game changers de la llista oficial de Wizards i no passa del nivell que li demanis. Si alguna cosa se'n surt, t'ho diu.",
+    "mazos_4_t": "Combos comprovats",
+    "mazos_4_d": "Digues-li una carta que t'agradi i et diu amb què combina, amb combos verificats i enllaç per comprovar-los. No són intuïcions.",
+    "mazos_pie": "Les cartes surten d'una cerca real a Scryfall. Si alguna no es pot confirmar, apareix ratllada."
   }
 }

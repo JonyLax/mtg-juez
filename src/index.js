@@ -41,7 +41,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 18;
+const VERSION = 19;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -402,10 +402,21 @@ async function mazo(request, env, usuario) {
   }
 
   // ── Cuadrar el mazo: los modelos no saben contar ──
-  // El modelo entrega la lista; nosotros contamos las cartas y ajustamos las
-  // tierras basicas hasta el numero que exige el formato.
-  const cuadre = respuesta.lista?.length
-    ? cuadrarMazo(respuesta.lista, limites)
+  // Si el modelo se salta la lista final, la reconstruimos a partir de las
+  // secciones. Antes, sin lista no se cuadraba nada y el mazo salia corto sin
+  // que nadie lo dijera.
+  let lista = respuesta.lista || [];
+  if (!lista.length && (respuesta.secciones || []).length) {
+    lista = [];
+    for (const sec of respuesta.secciones) {
+      for (const c of sec.cartas || []) {
+        if (c?.nombre) lista.push(`${c.cuantas || 1} ${c.nombre}`);
+      }
+    }
+    respuesta.lista_reconstruida = true;
+  }
+  const cuadre = lista.length && plan.intencion === "construir"
+    ? cuadrarMazo(lista, limites)
     : null;
 
   // ── Precio del mazo ENTERO, no solo de las cartas explicadas ──

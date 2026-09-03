@@ -5,7 +5,8 @@ import {
   planPrompt, PLAN_SCHEMA, mazoPrompt, MAZO_SCHEMA,
 } from "./prompt.js";
 import {
-  ejecutarPlan, combosCon, contextoDeCartas, fichaCarta, revisarMazo, BRACKETS,
+  ejecutarPlan, combosCon, contextoDeCartas, fichaCarta, revisarMazo,
+  cuadrarMazo, preciosDe, TAMANO_MAZO,
 } from "./deck.js";
 import { manejarAuth, usuarioActual } from "./auth.js";
 import { sugerir } from "./cards.js";
@@ -40,7 +41,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 17;
+const VERSION = 18;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -400,14 +401,34 @@ async function mazo(request, env, usuario) {
     return json(env, { error: "El modelo ha fallado al componer el mazo.", detail: e.detail }, 502);
   }
 
+  // ── Cuadrar el mazo: los modelos no saben contar ──
+  // El modelo entrega la lista; nosotros contamos las cartas y ajustamos las
+  // tierras basicas hasta el numero que exige el formato.
+  const cuadre = respuesta.lista?.length
+    ? cuadrarMazo(respuesta.lista, limites)
+    : null;
+
+  // ── Precio del mazo ENTERO, no solo de las cartas explicadas ──
+  // Antes solo se sumaban las que el modelo se molestaba en comentar, asi que
+  // el total salia muy por debajo del coste real.
+  let precios = new Map();
+  const noBasicas = (cuadre?.entradas || [])
+    .filter((e) => !/^(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Wastes)$/.test(e.nombre))
+    .map((e) => e.nombre);
+  if (noBasicas.length) {
+    try {
+      precios = await preciosDe(noBasicas.slice(0, 120), moneda);
+    } catch { /* si falla, caemos a los precios que ya teniamos */ }
+  }
+  const dato = (nombre) =>
+    precios.get((nombre || "").toLowerCase()) || disponibles.get((nombre || "").toLowerCase()) || null;
+
   // ── Comprobacion: nada de cartas inventadas ──
-  const usadas = [];
   const inventadas = [];
   for (const sec of respuesta.secciones || []) {
     for (const c of sec.cartas || []) {
-      const real = disponibles.get((c.nombre || "").toLowerCase());
+      const real = dato(c.nombre);
       if (real) {
-        usadas.push(real);
         c.precio = real.precio;
         c.gamechanger = real.gamechanger;
         c.uri = real.uri;
@@ -418,16 +439,30 @@ async function mazo(request, env, usuario) {
     }
   }
 
-  const revision = revisarMazo(usadas, limites);
-  if (inventadas.length) {
-    revision.avisos.unshift(
-      `Estas cartas no salian en la busqueda y no puedo confirmarlas: ${inventadas.join(", ")}.`
+  // El mazo real es la lista, no las cartas comentadas
+  const delMazo = [];
+  const sinConfirmar = [];
+  for (const e of cuadre?.entradas || []) {
+    if (/^(Snow-Covered )?(Plains|Island|Swamp|Mountain|Forest|Wastes)$/.test(e.nombre)) continue;
+    const real = dato(e.nombre);
+    if (real) for (let i = 0; i < e.cuantas; i++) delMazo.push(real);
+    else sinConfirmar.push(e.nombre);
+  }
+
+  const revision = revisarMazo(delMazo, limites);
+  const avisos = [...(respuesta.avisos || []), ...(cuadre?.avisos || []), ...revision.avisos];
+  const noConfirmadas = [...new Set([...inventadas, ...sinConfirmar])];
+  if (noConfirmadas.length) {
+    avisos.unshift(
+      `No he podido confirmar estas cartas en Scryfall: ${noConfirmadas.join(", ")}.`
     );
   }
 
   return json(env, {
     modo: "mazo",
     ...respuesta,
+    lista: cuadre?.lista || respuesta.lista || [],
+    tierras_basicas: cuadre?.basicas ?? respuesta.tierras_basicas,
     limites: {
       formato: limites.formato,
       comandante: limites.comandante,
@@ -436,8 +471,14 @@ async function mazo(request, env, usuario) {
       presupuesto: limites.presupuesto,
       moneda,
     },
-    resumen: { total: revision.total, gamechangers: revision.gamechangers, cartas: usadas.length },
-    avisos: [...(respuesta.avisos || []), ...revision.avisos],
+    resumen: {
+      total: revision.total,
+      gamechangers: revision.gamechangers,
+      cartas: cuadre?.total ?? delMazo.length,
+      objetivo: cuadre?.objetivo ?? TAMANO_MAZO[limites.formato],
+      confirmadas: delMazo.length,
+    },
+    avisos,
     debug: { busquedas: resultados.map((r) => `${r.para}: ${r.consulta} (${r.total})`), combos: combos.length },
   });
 }

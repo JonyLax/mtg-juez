@@ -168,7 +168,7 @@ Propon entre 4 y 8 busquedas que cubran lo que hace falta. NO pongas en ellas la
 
 Sintaxis util de Scryfall: t:dragon (tipo), o:"draw a card" (texto), c:r (color), mv<=3 (valor de mana), is:removal, is:boardwipe, o:"add {C}" (mana), kw:flying, f:commander.
 
-Para un mazo entero cubre al menos: la tematica principal, aceleracion de mana, robo de cartas, remocion puntual, barridos, y tierras que fijen el color. Pide cuantas suficientes: un mazo de Commander son 100 cartas y uno de constructed 60 minimo, asi que con 10 resultados por busqueda no llega. Usa "cuantas" para pedir entre 12 y 20 en las busquedas principales.
+Para un mazo entero cubre al menos: la tematica principal, aceleracion de mana, robo de cartas, remocion puntual, barridos, y tierras que fijen el color. Pide cuantas suficientes: un mazo de Commander son 100 cartas y uno de constructed 60 minimo, asi que con 10 resultados por busqueda no llega. Usa "cuantas" para pedir entre 15 y 25 en las busquedas principales. Un mazo de Commander necesita unas 64 cartas que no sean tierras basicas, asi que si tus busquedas devuelven 60 en total te vas a quedar corto.
 Ejemplo para dragones: {"para":"Dragones baratos que aporten al plan","consulta":"t:dragon mv<=6"}, {"para":"Aceleracion de mana","consulta":"o:\\"add\\" (t:artifact or t:creature) mv<=3"}, etc.
 
 SI FALTA INFORMACION
@@ -210,6 +210,7 @@ export function mazoPrompt({ lang, limites, intencion }) {
   const b = BRACKETS_TEXTO[limites.bracket];
   const sim = limites.moneda === "usd" ? "USD" : "EUR";
   const r = REGLAS_MAZO[limites.formato] || REGLAS_MAZO.commander;
+  const comp = COMPOSICION[limites.formato] || COMPOSICION.commander;
 
   return `Eres un constructor de mazos de Magic con criterio. Ya tienes delante las cartas reales que encajan con lo que ha pedido el jugador.
 
@@ -223,7 +224,9 @@ REGLAS QUE NO PUEDES SALTARTE
 1. Solo existen las cartas de la lista que te paso. Si nombras una que no esta ahi, es un error grave: el jugador no podra comprarla o no sera legal.
 2. EL PRESUPUESTO ES DEL MAZO ENTERO, no de cada carta. Un mazo bien construido tiene la mayoria de cartas baratas y dos o tres piezas caras que lo sostienen. Puedes gastar hasta un tercio del presupuesto en esas piezas clave si de verdad lo merecen; el resto tiene que salir barato para que cuadre. Ve sumando segun avanzas y, si te pasas, cambia cartas por alternativas mas baratas de la lista en vez de ignorarlo.
 3. ${limites.bracket <= 2 ? "Este bracket no admite NINGUN game changer: no incluyas los marcados como tal." : limites.bracket === 3 ? "Este bracket admite como maximo TRES game changers. Cuentalos." : "Este bracket no limita los game changers."}
-4. TAMANO Y CONSTRUCCION en ${limites.formato || "commander"}: ${r.cartas}; ${r.copias}${r.extra ? `; ${r.extra}` : ""}. Si construyes el mazo entero, cuenta las cartas y di cuantas tierras basicas completan el hueco en vez de listarlas una a una. Un mazo con menos cartas de las que exige el formato es ilegal y no le sirve al jugador.
+4. TAMANO Y CONSTRUCCION en ${limites.formato || "commander"}: ${r.cartas}; ${r.copias}${r.extra ? `; ${r.extra}` : ""}.
+5. COMPOSICION: ${comp} No entregues media docena de piezas bonitas y dejes que las tierras basicas rellenen el resto: eso da un mazo con la mitad de tierras que no funciona. Lista TODAS las cartas que no sean tierras basicas.
+6. LA LISTA FINAL ES OBLIGATORIA. El campo "lista" tiene que llevar todas las cartas del mazo, una por linea, en formato "1 Nombre En Ingles", incluidas las tierras no basicas. Las basicas puedes omitirlas: el sistema las cuenta y las ajusta. Si construyes el mazo entero, cuenta las cartas y di cuantas tierras basicas completan el hueco en vez de listarlas una a una. Un mazo con menos cartas de las que exige el formato es ilegal y no le sirve al jugador.
 
 COMO RESPONDES
 - Explica primero el plan del mazo: que quiere hacer, como gana, que hace en los primeros turnos. Sin esto, una lista de cartas no le sirve de nada a nadie.
@@ -238,6 +241,24 @@ Intencion detectada: ${intencion}.`;
 
 // Tamano y construccion segun el formato. Meter esto a mano en el prompt era
 // pedir un mazo ilegal: constructed son 60 minimo, no 40; las 40 son de limitado.
+// Cuantas cartas de cada tipo lleva un mazo. Sin esto el modelo entrega una
+// seleccion de piezas bonitas y deja que las tierras basicas rellenen el resto,
+// que da mazos con la mitad de tierras y sin plan.
+export const COMPOSICION = {
+  commander:
+    "1 comandante, unas 36 tierras en total (de ellas 8-12 no basicas y el resto basicas), " +
+    "10-12 cartas de aceleracion de mana, 8-10 de robo, 8-10 de interaccion entre remocion y " +
+    "barridos, y las 30-35 restantes para el plan del mazo. En total 100.",
+  duel:
+    "24 tierras aproximadamente y 36 hechizos, de los cuales unos 8-10 de interaccion. En total 60 minimo.",
+  "2hg":
+    "24 tierras aproximadamente y 36 hechizos. En total 60 minimo.",
+  casual:
+    "24 tierras aproximadamente y 36 hechizos. En total 60 minimo.",
+  limited:
+    "17 tierras y 23 hechizos, contando 15-17 criaturas. En total 40 minimo.",
+};
+
 export const REGLAS_MAZO = {
   commander: {
     cartas: "exactamente 100 cartas contando el comandante",
@@ -305,5 +326,5 @@ export const MAZO_SCHEMA = {
     lista: { type: "ARRAY", items: { type: "STRING" } },
     opciones: { type: "ARRAY", items: { type: "STRING" } },
   },
-  required: ["tipo", "texto"],
+  required: ["tipo", "texto", "lista"],
 };

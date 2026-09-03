@@ -392,6 +392,62 @@ button.cite:hover,button.cite[aria-expanded="true"]{
   box-shadow:0 1px 0 rgba(255,255,255,.5) inset;
 }
 
+/* ── modo: reglas o mazos ───────────────────────────────── */
+.modos{display:flex; gap:0; border:1px solid var(--gold-lo); border-radius:6px; overflow:hidden}
+.modos button{
+  background:none; border:none; padding:6px 14px; color:var(--gold);
+  font-family:var(--display); font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+}
+.modos button[aria-pressed="true"]{
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%); color:#181207;
+}
+@media (max-width:620px){ .modos button{padding:6px 10px; font-size:10px; letter-spacing:.08em} }
+
+/* ── el mazo ────────────────────────────────────────────── */
+.limites{
+  display:flex; flex-wrap:wrap; gap:7px; margin:0 0 14px;
+}
+.limite{
+  font-family:var(--display); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  border:1px solid var(--rule); border-radius:3px; padding:3px 8px; color:#6A5010;
+  background:linear-gradient(#F8F1DE,#E8DCBE);
+}
+.seccion{margin-top:18px}
+.seccion h3{
+  font-family:var(--display); font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+  color:#6A5010; margin:0 0 9px; padding-bottom:6px; border-bottom:1px solid var(--rule);
+}
+.carta-fila{display:flex; gap:9px; padding:5px 0; font-size:14.5px; align-items:baseline}
+.carta-fila .n{font-family:var(--display); color:var(--ink-soft); min-width:18px}
+.carta-fila .nom{font-weight:500}
+.carta-fila .por{color:#5A4F3C; font-style:italic; font-size:13.5px}
+.carta-fila .eur{margin-left:auto; font-family:var(--display); font-size:12px; color:var(--ink-soft); white-space:nowrap}
+.carta-fila .gc{
+  font-family:var(--display); font-size:9.5px; letter-spacing:.1em; color:#8A3419;
+  border:1px solid #8A3419; border-radius:2px; padding:0 4px;
+}
+.carta-fila.dudosa .nom{color:var(--alert); text-decoration:line-through}
+.total{
+  display:flex; gap:16px; flex-wrap:wrap; margin-top:16px; padding-top:12px;
+  border-top:1px solid var(--rule); font-family:var(--display); font-size:12.5px;
+  letter-spacing:.06em; color:#6A5010;
+}
+.lista-copiar{margin-top:18px}
+.lista-copiar textarea{
+  font-family:ui-monospace,monospace; font-size:12.5px; height:150px; line-height:1.5;
+}
+.copiar{
+  margin-top:8px; border:1px solid var(--edge); border-radius:5px; padding:9px 16px;
+  background:linear-gradient(#EBD79B 0%, var(--gold) 45%, #9C7C1C 100%); color:#181207;
+  font-family:var(--display); font-weight:700; font-size:11.5px; letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.cambiar-modo{
+  margin-top:13px; border:1px solid var(--gold-lo); border-radius:5px; padding:10px 15px;
+  background:none; color:var(--gold); width:100%; text-align:left; font-size:14.5px;
+}
+.cambiar-modo:hover{background:rgba(201,162,39,.1)}
+
 /* ── barra de escritura ─────────────────────────────────── */
 .composer{
   position:sticky; bottom:0;
@@ -447,6 +503,10 @@ footer{
     <span class="wordmark">JUEZ</span>
   </a>
   <div class="ctx">
+    <div class="modos hidden" id="modos" role="group" aria-label="Modo">
+      <button type="button" data-modo="reglas" aria-pressed="true">Reglas</button>
+      <button type="button" data-modo="mazo" aria-pressed="false">Mazos</button>
+    </div>
     <span class="ctx-label" id="ctxLabel"></span>
     <button class="linkbtn hidden" id="btnNew">Nueva consulta</button>
     <button class="linkbtn hidden" id="btnChange">Cambiar</button>
@@ -655,6 +715,7 @@ const S = {
   subformat: localStorage.getItem("mtg.subformat") || "standard",
   houseRules: localStorage.getItem("mtg.house") || "",
   turns: [],
+  modo: localStorage.getItem("mtg.modo") || "reglas",
   busy: false,
 };
 
@@ -708,6 +769,8 @@ function abrirChat() {
   $("btnChange").classList.remove("hidden");
   $("btnSalir").classList.remove("hidden");
   $("btnAjustes").classList.remove("hidden");
+  $("modos").classList.remove("hidden");
+  pintarModos();
   $("btnNew").classList.toggle("hidden", S.turns.length === 0);
   $("ctxLabel").textContent = contextLabel();
 }
@@ -821,8 +884,20 @@ function renderJudge(el, data) {
     html += `<div class="opts">${data.opciones.map((o) =>
       `<button class="optbtn" type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
   }
+  // Nunca cambiamos de modo solos: lo ofrecemos y decide el jugador
+  if (data.sugerir_modo_mazo && S.modo !== "mazo") {
+    html += `<button class="cambiar-modo" type="button" data-a-mazo>
+      Esto va de construir mazos. ¿Lo paso al modo Mazos y lo respondo desde ahí?</button>`;
+  }
 
   el.innerHTML = html;
+
+  const aMazo = el.querySelector("[data-a-mazo]");
+  if (aMazo) aMazo.onclick = () => {
+    const previa = [...S.turns].reverse().find((t) => t.role === "tu");
+    aMazo.remove();
+    cambiarModo("mazo", previa?.text);
+  };
 
   el.querySelectorAll(".cite[data-rule]").forEach((chip) => {
     chip.onclick = () => {
@@ -832,6 +907,116 @@ function renderJudge(el, data) {
       chip.setAttribute("aria-expanded", String(!oculto));
     };
   });
+  el.querySelectorAll("[data-opt]").forEach((b) => {
+    b.onclick = () => { el.querySelectorAll(".opts").forEach((o) => o.remove()); send(b.dataset.opt); };
+  });
+}
+
+// ─── Modo mazo ────────────────────────────────────────────────────────────────
+// El selector manda. La detección automática solo OFRECE cambiar: responder en
+// modo mazo a una duda de reglas daría una respuesta correcta a otra pregunta.
+function pintarModos() {
+  $("modos").querySelectorAll("[data-modo]").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.modo === S.modo));
+  });
+  $("q").placeholder = S.modo === "mazo"
+    ? "Ej: mazo de dragones con [[Tiamat]], 200 €, bracket 3"
+    : "Escribe la duda. Para citar una carta: [[Lightning Bolt]]";
+}
+
+function cambiarModo(modo, reenviar) {
+  S.modo = modo;
+  localStorage.setItem("mtg.modo", modo);
+  pintarModos();
+  if (reenviar) send(reenviar);
+  else $("q").focus();
+}
+
+const SIM = { eur: "€", usd: "$" };
+
+function renderMazo(el, d) {
+  el.className = "turn-judge";
+  const moneda = SIM[d.limites?.moneda] || "€";
+
+  let box = "";
+
+  // Los límites que ha entendido, visibles: si se ha equivocado, se ve al vuelo
+  const lim = d.limites || {};
+  const etiquetas = [
+    lim.formato && `Formato: ${lim.formato}`,
+    lim.comandante && `Comandante: ${lim.comandante}`,
+    lim.identidad && `Identidad: ${lim.identidad}`,
+    lim.bracket && `Bracket ${lim.bracket}`,
+    lim.presupuesto && `Presupuesto: ${lim.presupuesto} ${moneda}`,
+  ].filter(Boolean);
+  if (etiquetas.length) {
+    box += `<div class="limites">${etiquetas.map((t) => `<span class="limite">${esc(t)}</span>`).join("")}</div>`;
+  }
+
+  box += `<div class="answer">${String(d.texto || "").split(/\n{2,}/)
+    .map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`).join("")}</div>`;
+
+  for (const sec of d.secciones || []) {
+    box += `<div class="seccion"><h3>${esc(sec.titulo)}</h3>` +
+      (sec.cartas || []).map((c) => {
+        const precio = c.precio == null ? "" : `${Number(c.precio).toFixed(2)} ${moneda}`;
+        return `<div class="carta-fila${c.inventada ? " dudosa" : ""}">
+          <span class="n">${c.cuantas && c.cuantas > 1 ? c.cuantas + "×" : ""}</span>
+          <span><span class="nom">${esc(c.nombre)}</span>
+            ${c.gamechanger ? '<span class="gc">GC</span>' : ""}
+            <span class="por"> — ${esc(c.porque || "")}</span></span>
+          <span class="eur">${precio}</span>
+        </div>`;
+      }).join("") + "</div>";
+  }
+
+  if (d.tierras_basicas) {
+    box += `<div class="seccion"><h3>Tierras básicas</h3>
+      <div class="carta-fila"><span class="n">${d.tierras_basicas}×</span>
+      <span class="por">para completar el mazo</span></div></div>`;
+  }
+
+  if (d.resumen && d.resumen.cartas) {
+    box += `<div class="total">
+      <span>${d.resumen.cartas} cartas comprobadas</span>
+      <span>Total: ${Number(d.resumen.total).toFixed(2)} ${moneda}</span>
+      ${d.resumen.gamechangers ? `<span>${d.resumen.gamechangers} game changers</span>` : ""}
+    </div>`;
+  }
+
+  for (const a of d.avisos || []) {
+    box += `<div class="flag">${esc(a)}</div>`;
+  }
+
+  if ((d.lista || []).length) {
+    box += `<div class="lista-copiar">
+      <textarea readonly id="lista-${Date.now()}">${esc(d.lista.join("\n"))}</textarea>
+      <button class="copiar" type="button" data-copiar>Copiar la lista</button>
+    </div>`;
+  }
+
+  let html = `<div class="card-title">${SEAL}Juez<span class="n">Mazo</span></div>` +
+    `<div class="typeline">${esc(lim.formato || "Magic")} — ${d.tipo === "clarificacion" ? "Aclaración" : "Construcción"}</div>` +
+    `<div class="textbox">${box}</div>`;
+
+  if (d.tipo === "clarificacion" && (d.opciones || []).length) {
+    html += `<div class="opts">${d.opciones.map((o) =>
+      `<button class="optbtn" type="button" data-opt="${esc(o)}">${esc(o)}</button>`).join("")}</div>`;
+  }
+
+  el.innerHTML = html;
+
+  const btn = el.querySelector("[data-copiar]");
+  if (btn) btn.onclick = async () => {
+    const t = el.querySelector(".lista-copiar textarea");
+    try {
+      await navigator.clipboard.writeText(t.value);
+      btn.textContent = "Copiada";
+      setTimeout(() => (btn.textContent = "Copiar la lista"), 1800);
+    } catch {
+      t.select(); // sin permiso de portapapeles, al menos queda seleccionada
+    }
+  };
   el.querySelectorAll("[data-opt]").forEach((b) => {
     b.onclick = () => { el.querySelectorAll(".opts").forEach((o) => o.remove()); send(b.dataset.opt); };
   });
@@ -853,7 +1038,8 @@ function repintar() {
     if (t.role === "juez") {
       const el = document.createElement("div");
       $("log").append(el);
-      renderJudge(el, t.data);
+      if (t.data?.modo === "mazo") renderMazo(el, t.data);
+      else renderJudge(el, t.data);
     } else {
       renderYou(t.text);
     }
@@ -880,7 +1066,7 @@ async function send(text) {
   const pending = renderPending();
 
   try {
-    const res = await fetch(`${API}/api/ask`, {
+    const res = await fetch(`${API}/api/${S.modo === "mazo" ? "deck" : "ask"}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -902,7 +1088,8 @@ async function send(text) {
     if (!res.ok) {
       renderError(pending, data.error || "Algo ha fallado.", data.detail);
     } else {
-      renderJudge(pending, data);
+      if (data.modo === "mazo") renderMazo(pending, data);
+      else renderJudge(pending, data);
       S.turns.push({ role: "juez", data });
     }
   } catch (e) {
@@ -1031,7 +1218,7 @@ function mostrarAuth(cual, mensaje, clase) {
   $("setup").classList.add("hidden");
   $("chat").classList.add("hidden");
   $("composer").classList.add("hidden");
-  ["btnChange", "btnNew", "btnSalir", "btnAjustes"].forEach((b) => $(b).classList.add("hidden"));
+  ["btnChange", "btnNew", "btnSalir", "btnAjustes", "modos"].forEach((b) => $(b).classList.add("hidden"));
   $("ctxLabel").textContent = "";
 }
 
@@ -1425,6 +1612,16 @@ const PASOS = [
             vuestro formato.</p>`,
   },
   {
+    titulo: "También te construyo el mazo",
+    ilustracion: `<div class="fila"><span class="falso">Mazo de dragones con [[Tiamat]], 200 €, bracket 3</span></div>
+                  <div class="fila"><span class="falso gris">Terror of the Peaks — remata la partida · 11,40 €</span></div>`,
+    texto: `<p>Arriba tienes un interruptor: <strong>Reglas</strong> y <strong>Mazos</strong>.
+            En el segundo te construyo un mazo entero respetando el formato, el
+            presupuesto y el bracket, o te digo qué cartas encajan con una que ya tengas.</p>
+            <p>Las cartas no me las invento: salen de una búsqueda real con su precio
+            de la impresión más barata. Al final te doy la lista para copiar y pegar.</p>`,
+  },
+  {
     titulo: "Si me falta un dato, pregunto",
     ilustracion: `<div class="fila"><span class="falso">La criatura atacante tiene 3 de fuerza.</span></div>
                   <div class="fila"><span class="falso">La criatura atacante tiene 4 de fuerza.</span></div>`,
@@ -1504,6 +1701,10 @@ addEventListener("keydown", (e) => {
 });
 
 $("ajTour").onclick = () => { cerrarAjustes(); abrirTour(); };
+
+$("modos").querySelectorAll("[data-modo]").forEach((b) => {
+  b.onclick = () => cambiarModo(b.dataset.modo);
+});
 
 // ─── Instalación ──────────────────────────────────────────────────────────────
 let promptInstalar = null;

@@ -133,7 +133,177 @@ export const RESPONSE_SCHEMA = {
     reglas_citadas: { type: "ARRAY", items: { type: "STRING" } },
     opciones: { type: "ARRAY", items: { type: "STRING" } },
     confianza: { type: "STRING", enum: ["alta", "media", "baja"] },
+    // Si la pregunta va de construir mazos, lo decimos para ofrecer el cambio
+    // de modo. No cambiamos solos: una respuesta de mazo a una duda de reglas
+    // seria correcta pero a otra pregunta.
+    sugerir_modo_mazo: { type: "BOOLEAN" },
   },
   required: ["tipo", "texto", "reglas_citadas", "confianza"],
-  propertyOrdering: ["tipo", "texto", "reglas_citadas", "opciones", "confianza"],
+  propertyOrdering: ["tipo", "texto", "reglas_citadas", "opciones", "confianza", "sugerir_modo_mazo"],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODO MAZO
+//
+// Dos vueltas. En la primera el modelo NO nombra cartas: traduce lo que pide el
+// jugador a busquedas de Scryfall. En la segunda solo puede elegir de entre las
+// cartas reales que esas busquedas han devuelto. Asi no puede inventarse una
+// carta, ni saltarse la identidad de color, ni equivocarse con un precio.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export function planPrompt({ lang }) {
+  const idioma = IDIOMAS[lang] || IDIOMAS.es;
+  return `Eres el planificador de un constructor de mazos de Magic. Tu unico trabajo es traducir lo que pide el jugador a busquedas de Scryfall. NO propones cartas: no tienes forma de saber su precio ni su legalidad, y si las nombras de memoria te equivocaras.
+
+QUE TIENES QUE EXTRAER
+- formato: commander, duel, limited, 2hg o casual.
+- comandante: si lo nombra. Escribelo en INGLES si lo reconoces; si te lo dice en otro idioma, traducelo.
+- bracket: de 1 a 5, si lo dice. Brackets 1 y 2 no admiten game changers, el 3 admite hasta tres, el 4 y el 5 no tienen limite.
+- presupuesto_total y moneda: si da una cifra.
+- cartas_mencionadas: cualquier carta que nombre, en INGLES.
+- intencion: "construir" un mazo entero, "recomendar" cartas que encajen con algo, o "evaluar" si una carta concreta vale.
+
+LAS BUSQUEDAS
+Propon entre 4 y 8 busquedas que cubran lo que hace falta. NO pongas en ellas la identidad de color, la legalidad ni el precio: eso lo anade el sistema por su cuenta. Concentrate en el QUE.
+
+Sintaxis util de Scryfall: t:dragon (tipo), o:"draw a card" (texto), c:r (color), mv<=3 (valor de mana), is:removal, is:boardwipe, o:"add {C}" (mana), kw:flying, f:commander.
+
+Para un mazo entero cubre al menos: la tematica principal, aceleracion de mana, robo de cartas, remocion puntual, barridos, y tierras que fijen el color. Pide cuantas suficientes: un mazo de Commander son 100 cartas y uno de constructed 60 minimo, asi que con 10 resultados por busqueda no llega. Usa "cuantas" para pedir entre 12 y 20 en las busquedas principales.
+Ejemplo para dragones: {"para":"Dragones baratos que aporten al plan","consulta":"t:dragon mv<=6"}, {"para":"Aceleracion de mana","consulta":"o:\\"add\\" (t:artifact or t:creature) mv<=3"}, etc.
+
+SI FALTA INFORMACION
+Si no sabes el formato, o pide un mazo sin decir comandante ni tematica, pon lo que falte en falta_info y deja busquedas vacio. Mas vale preguntar que construir a ciegas.
+
+Escribe "entendido" en ${idioma}.`;
+}
+
+export const PLAN_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    entendido: { type: "STRING" },
+    formato: { type: "STRING" },
+    comandante: { type: "STRING" },
+    bracket: { type: "INTEGER" },
+    presupuesto_total: { type: "NUMBER" },
+    moneda: { type: "STRING", enum: ["eur", "usd"] },
+    cartas_mencionadas: { type: "ARRAY", items: { type: "STRING" } },
+    intencion: { type: "STRING", enum: ["construir", "recomendar", "evaluar"] },
+    busquedas: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          para: { type: "STRING" },
+          consulta: { type: "STRING" },
+          cuantas: { type: "INTEGER" },
+        },
+        required: ["para", "consulta"],
+      },
+    },
+    falta_info: { type: "ARRAY", items: { type: "STRING" } },
+  },
+  required: ["entendido", "intencion", "busquedas"],
+};
+
+export function mazoPrompt({ lang, limites, intencion }) {
+  const idioma = IDIOMAS[lang] || IDIOMAS.es;
+  const b = BRACKETS_TEXTO[limites.bracket];
+  const sim = limites.moneda === "usd" ? "USD" : "EUR";
+  const r = REGLAS_MAZO[limites.formato] || REGLAS_MAZO.commander;
+
+  return `Eres un constructor de mazos de Magic con criterio. Ya tienes delante las cartas reales que encajan con lo que ha pedido el jugador.
+
+LO QUE HA PEDIDO
+Formato: ${limites.formato || "commander"}
+${limites.comandante ? `Comandante: ${limites.comandante} (identidad de color ${limites.identidad || "?"})` : "Sin comandante indicado."}
+${limites.bracket ? `Bracket ${limites.bracket}${b ? ` (${b})` : ""}.` : "Sin bracket indicado."}
+${limites.presupuesto ? `Presupuesto total: ${limites.presupuesto} ${sim}, contando la impresion mas barata de cada carta.` : "Sin presupuesto indicado."}
+
+REGLAS QUE NO PUEDES SALTARTE
+1. Solo existen las cartas de la lista que te paso. Si nombras una que no esta ahi, es un error grave: el jugador no podra comprarla o no sera legal.
+2. EL PRESUPUESTO ES DEL MAZO ENTERO, no de cada carta. Un mazo bien construido tiene la mayoria de cartas baratas y dos o tres piezas caras que lo sostienen. Puedes gastar hasta un tercio del presupuesto en esas piezas clave si de verdad lo merecen; el resto tiene que salir barato para que cuadre. Ve sumando segun avanzas y, si te pasas, cambia cartas por alternativas mas baratas de la lista en vez de ignorarlo.
+3. ${limites.bracket <= 2 ? "Este bracket no admite NINGUN game changer: no incluyas los marcados como tal." : limites.bracket === 3 ? "Este bracket admite como maximo TRES game changers. Cuentalos." : "Este bracket no limita los game changers."}
+4. TAMANO Y CONSTRUCCION en ${limites.formato || "commander"}: ${r.cartas}; ${r.copias}${r.extra ? `; ${r.extra}` : ""}. Si construyes el mazo entero, cuenta las cartas y di cuantas tierras basicas completan el hueco en vez de listarlas una a una. Un mazo con menos cartas de las que exige el formato es ilegal y no le sirve al jugador.
+
+COMO RESPONDES
+- Explica primero el plan del mazo: que quiere hacer, como gana, que hace en los primeros turnos. Sin esto, una lista de cartas no le sirve de nada a nadie.
+- Agrupa las cartas por funcion (motor principal, aceleracion, robo, interaccion, tierras) y di en una linea POR QUE esta cada una. El porque es lo que le ensena a construir, no la lista.
+- Si un combo verificado de los que te paso se puede cerrar con una carta mas, dilo explicitamente.
+- Al final, la lista completa para copiar y pegar, en formato "1 Nombre En Ingles", una por linea, con los nombres EXACTOS tal como aparecen en la lista de cartas disponibles.
+- Si te faltan datos para hacerlo bien, devuelve tipo "clarificacion" con opciones concretas en vez de suponer.
+
+IDIOMA: escribe en ${idioma}, con su ortografia correcta. Los nombres de carta van SIEMPRE en ingles, que es como se buscan y se compran.
+Intencion detectada: ${intencion}.`;
+}
+
+// Tamano y construccion segun el formato. Meter esto a mano en el prompt era
+// pedir un mazo ilegal: constructed son 60 minimo, no 40; las 40 son de limitado.
+export const REGLAS_MAZO = {
+  commander: {
+    cartas: "exactamente 100 cartas contando el comandante",
+    copias: "una sola copia de cada carta, salvo tierras basicas",
+    extra: "todas dentro de la identidad de color del comandante",
+  },
+  duel: {
+    cartas: "60 cartas como minimo, sin maximo",
+    copias: "hasta 4 copias de cada carta, salvo tierras basicas",
+    extra: "banquillo opcional de hasta 15 cartas",
+  },
+  limited: {
+    cartas: "40 cartas como minimo",
+    copias: "tantas copias como hayas abierto",
+    extra: "las tierras basicas son ilimitadas y no cuentan como banquillo",
+  },
+  "2hg": {
+    cartas: "60 cartas como minimo por jugador",
+    copias: "hasta 4 copias de cada carta, salvo tierras basicas",
+    extra: "el equipo comparte 30 vidas y turno",
+  },
+  casual: {
+    cartas: "60 cartas como minimo",
+    copias: "hasta 4 copias de cada carta, salvo tierras basicas",
+    extra: "",
+  },
+};
+
+const BRACKETS_TEXTO = {
+  1: "Exhibition, tematico",
+  2: "Core, nivel precon",
+  3: "Upgraded, precon mejorado",
+  4: "Optimized",
+  5: "cEDH competitivo",
+};
+
+export const MAZO_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    tipo: { type: "STRING", enum: ["mazo", "sugerencias", "clarificacion"] },
+    texto: { type: "STRING" },
+    secciones: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          titulo: { type: "STRING" },
+          cartas: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                nombre: { type: "STRING" },
+                cuantas: { type: "INTEGER" },
+                porque: { type: "STRING" },
+              },
+              required: ["nombre", "porque"],
+            },
+          },
+        },
+        required: ["titulo", "cartas"],
+      },
+    },
+    tierras_basicas: { type: "INTEGER" },
+    lista: { type: "ARRAY", items: { type: "STRING" } },
+    opciones: { type: "ARRAY", items: { type: "STRING" } },
+  },
+  required: ["tipo", "texto"],
 };

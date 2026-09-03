@@ -41,7 +41,7 @@ const json = (env, body, status = 200) =>
 
 // Sube este numero al tocar el fichero. Sirve para saber de un vistazo, en
 // /api/health y /api/diag, si lo que hay desplegado es lo que crees.
-const VERSION = 19;
+const VERSION = 20;
 
 // Modelos a probar, en orden. El primero que conteste gana.
 // Google retira modelos para claves nuevas sin quitarlos del catalogo: la lista
@@ -462,6 +462,7 @@ async function mazo(request, env, usuario) {
 
   const revision = revisarMazo(delMazo, limites);
   const avisos = [...(respuesta.avisos || []), ...(cuadre?.avisos || []), ...revision.avisos];
+  const notas = revision.notas || [];
   const noConfirmadas = [...new Set([...inventadas, ...sinConfirmar])];
   if (noConfirmadas.length) {
     avisos.unshift(
@@ -490,6 +491,7 @@ async function mazo(request, env, usuario) {
       confirmadas: delMazo.length,
     },
     avisos,
+    notas,
     debug: { busquedas: resultados.map((r) => `${r.para}: ${r.consulta} (${r.total})`), combos: combos.length },
   });
 }

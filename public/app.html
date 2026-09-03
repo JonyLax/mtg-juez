@@ -993,6 +993,7 @@ function renderMazo(el, d) {
 
   if ((d.lista || []).length) {
     box += `<div class="lista-copiar">
+      <h3 style="font-family:var(--display);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#6A5010;margin:0 0 9px">Lista para copiar</h3>
       <textarea readonly id="lista-${Date.now()}">${esc(d.lista.join("\n"))}</textarea>
       <button class="copiar" type="button" data-copiar>Copiar la lista</button>
     </div>`;

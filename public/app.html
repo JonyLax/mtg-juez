@@ -977,10 +977,13 @@ function renderMazo(el, d) {
   }
 
   if (d.resumen && d.resumen.cartas) {
+    const r = d.resumen;
+    const cuadra = !r.objetivo || r.cartas === r.objetivo;
     box += `<div class="total">
-      <span>${d.resumen.cartas} cartas comprobadas</span>
-      <span>Total: ${Number(d.resumen.total).toFixed(2)} ${moneda}</span>
-      ${d.resumen.gamechangers ? `<span>${d.resumen.gamechangers} game changers</span>` : ""}
+      <span${cuadra ? "" : ' style="color:var(--alert)"'}>${r.cartas}${
+        r.objetivo ? ` de ${r.objetivo}` : ""} cartas</span>
+      <span>Total: ${Number(r.total).toFixed(2)} ${moneda}</span>
+      ${r.gamechangers ? `<span>${r.gamechangers} game changers</span>` : ""}
     </div>`;
   }
 

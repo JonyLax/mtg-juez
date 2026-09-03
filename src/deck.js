@@ -290,6 +290,17 @@ export function cuadrarMazo(lista, limites) {
     }
   }
 
+  // Un mazo de Commander lleva unas 36 tierras. Si hacen falta muchas mas
+  // basicas para llegar a 100, es que el modelo se ha quedado corto de cartas
+  // y el resultado, aunque sume 100, no es jugable.
+  if (faltan > objetivo * 0.42) {
+    nota.push(
+      `El mazo se queda corto: solo ${cuentaNoBasicas} cartas propias y harian falta ` +
+      `${faltan} tierras basicas para llegar a ${objetivo}. Un mazo asi tiene demasiadas ` +
+      `tierras. Pidemelo otra vez y lo completo.`
+    );
+  }
+
   const finales = [...noBasicas, ...nuevasBasicas];
   const total = finales.reduce((s, e) => s + e.cuantas, 0);
   if (total !== objetivo) {

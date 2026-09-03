@@ -427,6 +427,10 @@ button.cite:hover,button.cite[aria-expanded="true"]{
   border:1px solid #8A3419; border-radius:2px; padding:0 4px;
 }
 .carta-fila.dudosa .nom{color:var(--alert); text-decoration:line-through}
+.nota-mazo{
+  margin-top:10px; font-size:13.5px; color:var(--ink-soft); font-style:italic;
+  border-left:3px solid var(--rule); padding:2px 0 2px 11px;
+}
 .total{
   display:flex; gap:16px; flex-wrap:wrap; margin-top:16px; padding-top:12px;
   border-top:1px solid var(--rule); font-family:var(--display); font-size:12.5px;
@@ -989,6 +993,11 @@ function renderMazo(el, d) {
 
   for (const a of d.avisos || []) {
     box += `<div class="flag">${esc(a)}</div>`;
+  }
+  // Las notas no son problemas: pasarse tres euros de doscientos se cuenta,
+  // no se alarma. Mezclarlas con los avisos hacia que nada pareciera urgente.
+  for (const n of d.notas || []) {
+    box += `<div class="nota-mazo">${esc(n)}</div>`;
   }
 
   if ((d.lista || []).length) {

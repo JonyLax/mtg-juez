@@ -318,8 +318,14 @@ export function cuadrarMazo(lista, limites) {
 }
 
 /** Comprueba el mazo propuesto contra los límites que pidió el jugador. */
+// Cuanto se puede pasar del presupuesto sin que sea un problema. Ajustar el
+// mazo al centimo obligaria a cambiar buenas cartas por peores; pasarse un 3%
+// es normal comprando cartas sueltas.
+const TOLERANCIA = 0.05;
+
 export function revisarMazo(cartas, limites) {
   const avisos = [];
+  const notas = [];
   const gc = cartas.filter((c) => c.gamechanger);
   const tope = BRACKETS[limites.bracket]?.gamechangers;
 
@@ -333,15 +339,27 @@ export function revisarMazo(cartas, limites) {
   const total = cartas.reduce((s, c) => s + (c.precio || 0), 0);
   const sim = limites.moneda === "usd" ? "USD" : "EUR";
   if (limites.presupuesto && total > limites.presupuesto) {
-    avisos.push(
-      `La suma da ${total.toFixed(2)} ${sim} y el presupuesto era ${limites.presupuesto} ${sim}.`
+    const exceso = total - limites.presupuesto;
+    const porcentaje = exceso / limites.presupuesto;
+    const linea =
+      `${total.toFixed(2)} ${sim} sobre un presupuesto de ${limites.presupuesto} ${sim}: ` +
+      `${exceso.toFixed(2)} ${sim} de mas (${(porcentaje * 100).toFixed(0)}%).`;
+    if (porcentaje <= TOLERANCIA) {
+      notas.push(`${linea} Se pasa poco; si te vale, adelante.`);
+    } else {
+      avisos.push(`${linea} Es bastante: pideme alternativas mas baratas para las piezas caras.`);
+    }
+  } else if (limites.presupuesto) {
+    notas.push(
+      `${total.toFixed(2)} ${sim} de ${limites.presupuesto} ${sim}: te sobran ` +
+      `${(limites.presupuesto - total).toFixed(2)} ${sim}.`
     );
   }
 
   const sinPrecio = cartas.filter((c) => c.precio === null);
   if (sinPrecio.length) {
-    avisos.push(`Sin precio en Scryfall: ${sinPrecio.map((c) => c.nombre).join(", ")}.`);
+    notas.push(`Sin precio en Scryfall: ${[...new Set(sinPrecio.map((c) => c.nombre))].join(", ")}.`);
   }
 
-  return { total, gamechangers: gc.length, avisos };
+  return { total, gamechangers: gc.length, avisos, notas };
 }

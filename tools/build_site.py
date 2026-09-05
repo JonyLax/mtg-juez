@@ -52,13 +52,29 @@ def render(plantilla, textos):
     return re.sub(r"\{\{(\w+)\}\}", sub, plantilla)
 
 
+def cuerpo_legal(doc):
+    """Convierte las secciones del JSON en HTML."""
+    trozos = []
+    for sec in doc["secciones"]:
+        trozos.append(f"<h2>{sec['h']}</h2>")
+        for parrafo in sec["p"]:
+            # Los huecos por rellenar se marcan en color, para que salten a la
+            # vista si se publica la página sin completarlos.
+            texto = re.sub(r"\[([A-ZÁÉÍÓÚÑ ]+)\]", r'<span class="rellenar">[\1]</span>', parrafo)
+            trozos.append(f"<p>{texto}</p>")
+    return f'<div class="legal-txt">{"".join(trozos)}</div>'
+
+
 def main():
     with open(os.path.join(SITE, "strings.json"), encoding="utf-8") as f:
         todos = json.load(f)
+    with open(os.path.join(SITE, "legal.json"), encoding="utf-8") as f:
+        legales = json.load(f)
     idiomas = [k for k in todos if not k.startswith("_")]
 
     landing = open(os.path.join(SITE, "landing.html"), encoding="utf-8").read()
     precios = open(os.path.join(SITE, "precios.html"), encoding="utf-8").read()
+    legal = open(os.path.join(SITE, "legal.html"), encoding="utf-8").read()
 
     # Todos los idiomas deben tener las mismas claves, o alguna pagina saldria a medias
     base = set(todos[idiomas[0]])
@@ -99,6 +115,23 @@ def main():
 
         carpeta = os.path.join(OUT, lang)
         os.makedirs(carpeta, exist_ok=True)
+
+        # Las legales solo existen en castellano: dos traducciones de un mismo
+        # contrato que digan cosas distintas es un problema, no una mejora.
+        for clave, ruta in (("privacidad", "privacidad"), ("terminos", "terminos")):
+            doc = legales[clave]
+            t2 = dict(t)
+            t2["legal_titulo"] = doc["titulo"]
+            t2["legal_actualizado"] = doc["actualizado"]
+            t2["legal_intro"] = doc["intro"]
+            t2["legal_cuerpo"] = cuerpo_legal(doc)
+            t2["legal_ruta"] = ruta
+            aviso = legales["aviso_otro_idioma"].get(lang)
+            t2["legal_aviso"] = f'<div class="aviso-idioma">{aviso}</div>' if aviso else ""
+            with open(os.path.join(carpeta, f"{ruta}.html"), "w", encoding="utf-8") as f:
+                f.write(render(legal, t2))
+            hechos.append(os.path.join(carpeta, f"{ruta}.html"))
+
         for nombre, plantilla in (("index.html", landing), ("precios.html", precios)):
             ruta = os.path.join(carpeta, nombre)
             with open(ruta, "w", encoding="utf-8") as f:
@@ -108,7 +141,7 @@ def main():
     # Mapa del sitio, para los buscadores
     urls = []
     for lang in idiomas:
-        for ruta in ("", "precios"):
+        for ruta in ("", "precios", "privacidad", "terminos"):
             urls.append(f"  <url><loc>https://mtg-juez.com/{lang}/{ruta}</loc></url>")
     with open(os.path.join(OUT, "sitemap.xml"), "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n'

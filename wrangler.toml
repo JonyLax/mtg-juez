@@ -15,7 +15,7 @@ run_worker_first = true
 [[d1_databases]]
 binding = "DB"
 database_name = "juez"
-database_id = "PEGA_AQUI_EL_ID_DE_TU_BASE_DE_DATOS"
+database_id = "4925068d-13da-44ec-abe6-e4db292ae81b"
 
 # Techo diario de toda la instalacion, en unidades (reglas=1, mazo=3). Es lo que
 # protege tu clave de Gemini de que un dia bueno la agote para todos. Subelo

@@ -34,13 +34,21 @@ async function enviar(env, { to, subject, html, text }) {
   if (!env.RESEND_API_KEY || !env.MAIL_FROM) {
     throw new Error("Faltan los secretos RESEND_API_KEY o MAIL_FROM en el Worker");
   }
+
+  // El remitente sale de un subdominio (send.mtg-juez.com) porque el MX de la
+  // raiz lo necesita Cloudflare Email Routing para recibir en hola@. Pero si
+  // alguien responde a un correo de confirmacion, queremos que llegue al buzon
+  // de verdad y no se pierda.
+  const cuerpo = { from: env.MAIL_FROM, to: [to], subject, html, text };
+  if (env.MAIL_REPLY_TO) cuerpo.reply_to = env.MAIL_REPLY_TO;
+
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ from: env.MAIL_FROM, to: [to], subject, html, text }),
+    body: JSON.stringify(cuerpo),
     signal: AbortSignal.timeout(12000),
   });
   if (!res.ok) {

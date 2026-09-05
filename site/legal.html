@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14100C">
+<title>{{legal_titulo}} · Juez</title>
+<meta name="description" content="{{legal_titulo}} de Juez.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://mtg-juez.com/{{lang}}/{{legal_ruta}}">
+{{alternates}}
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{titulo_pagina}}">
+<meta property="og:description" content="{{meta_desc}}">
+<meta property="og:url" content="https://mtg-juez.com/{{lang}}/">
+<meta property="og:image" content="https://mtg-juez.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site.css">
+<script src="/web.js" defer></script>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="sealArt">
+    <circle cx="32" cy="32" r="27.5" fill="none" stroke="#C9A227" stroke-opacity=".45" stroke-width="1.4"/>
+    <polygon points="32,8 54.8,24.6 46.1,51.4 17.9,51.4 9.2,24.6" fill="none" stroke="#C9A227" stroke-width="3" stroke-linejoin="round"/>
+    <polygon points="32,25.5 37,32 32,38.5 27,32" fill="#EBD79B"/>
+    <circle cx="32" cy="8" r="5.4" fill="#F7F0DA" stroke="#0A0704" stroke-width="1.2"/>
+    <circle cx="54.8" cy="24.6" r="5.4" fill="#3B7BB5" stroke="#0A0704" stroke-width="1.2"/>
+    <circle cx="46.1" cy="51.4" r="5.4" fill="#3A342C" stroke="#0A0704" stroke-width="1.2"/>
+    <circle cx="17.9" cy="51.4" r="5.4" fill="#B4413A" stroke="#0A0704" stroke-width="1.2"/>
+    <circle cx="9.2" cy="24.6" r="5.4" fill="#4E8B54" stroke="#0A0704" stroke-width="1.2"/>
+  </g>
+</defs></svg>
+
+<header class="top">
+  <div class="env">
+    <a class="logo" href="/{{lang}}/" title="Juez">
+      <svg viewBox="0 0 64 64" role="img" aria-label="Juez"><use href="#sealArt"/></svg>
+      <span>JUEZ</span>
+    </a>
+    <nav>
+      <a class="oculta-movil" href="#como">{{nav_como}}</a>
+      <a class="oculta-movil" href="#mazos">{{mazos_etiqueta}}</a>
+      <a class="oculta-movil" href="#tiendas">{{nav_tiendas}}</a>
+      <a class="btn" href="https://chat.mtg-juez.com/" data-entrar="{{nav_abrir}}">{{nav_entrar}}</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="portada" style="padding-bottom:26px">
+    <div class="env" style="display:block">
+      <div class="columna">
+        <p class="etiqueta">{{pie_legal}}</p>
+        <h1 style="font-size:clamp(30px,4.4vw,42px)">{{legal_titulo}}</h1>
+        <p class="nota">{{legal_actualizado}}</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding-top:0">
+    <div class="env">
+      <div class="columna">
+        {{legal_aviso}}
+        <p class="entradilla" style="margin-bottom:34px">{{legal_intro}}</p>
+        {{legal_cuerpo}}
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="env">
+    <div class="pie-cols">
+      <div>
+        <a class="logo" href="/{{lang}}/" style="margin-bottom:14px">
+          <svg viewBox="0 0 64 64" aria-hidden="true"><use href="#sealArt"/></svg>
+          <span>JUEZ</span>
+        </a>
+        <div class="idiomas">{{selector_idioma}}</div>
+      </div>
+      <div>
+        <h4>{{pie_producto}}</h4>
+        <ul>
+          <li><a href="/{{lang}}/#como">{{nav_como}}</a></li>
+          <li><a href="/{{lang}}/#tiendas">{{nav_tiendas}}</a></li>
+          <li><a href="/{{lang}}/precios">{{nav_precios}}</a></li>
+          <li><a href="https://chat.mtg-juez.com/">{{nav_entrar}}</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>{{pie_legal}}</h4>
+        <ul>
+          <li><a href="/{{lang}}/privacidad">{{pie_privacidad}}</a></li>
+          <li><a href="/{{lang}}/terminos">{{pie_terminos}}</a></li>
+          <li><a href="mailto:hola@mtg-juez.com">{{pie_contacto}}</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="legal">{{pie_aviso}}</p>
+  </div>
+</footer>
+
+</body>
+</html>

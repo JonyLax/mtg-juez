@@ -1,0 +1,141 @@
+{
+  "_nota": "Version vinculante en castellano. Los huecos entre [CORCHETES] los tienes que rellenar tu: son datos que exige la LSSI y que yo no tengo.",
+
+  "aviso_otro_idioma": {
+    "en": "This page is only available in Spanish. Juez is operated from Spain and the Spanish version is the legally binding one.",
+    "ca": "Aquesta pàgina només està disponible en castellà. Juez s'opera des d'Espanya i la versió castellana és la vinculant."
+  },
+
+  "privacidad": {
+    "titulo": "Política de privacidad",
+    "actualizado": "Última actualización: septiembre de 2026",
+    "intro": "Esta página explica qué datos recoge Juez, para qué, con quién se comparten y qué puedes hacer al respecto. Está escrita para que se entienda, no para cubrirnos las espaldas.",
+    "secciones": [
+      {
+        "h": "Quién trata tus datos",
+        "p": [
+          "Responsable: [NOMBRE Y APELLIDOS O RAZÓN SOCIAL], con NIF [NIF] y domicilio en [DIRECCIÓN COMPLETA].",
+          "Contacto: hola@mtg-juez.com"
+        ]
+      },
+      {
+        "h": "Qué datos recogemos",
+        "p": [
+          "Al crear una cuenta: nombre de usuario, dirección de correo electrónico y contraseña. La contraseña nunca se guarda tal cual: tu navegador la transforma antes de enviarla y el servidor le aplica otra transformación más con una clave secreta. Ni siquiera nosotros podemos leerla.",
+          "Mientras usas la herramienta: el idioma que elijas, el plan que tengas contratado y un contador diario de consultas para aplicar los límites de uso.",
+          "Por seguridad: la dirección IP se usa de forma temporal para limitar los intentos de acceso y de registro. No se conserva asociada a tu cuenta.",
+          "Tus conversaciones con el juez se guardan en tu propio dispositivo, en el navegador. No se almacenan en nuestros servidores. Si borras los datos del navegador o pulsas «Nueva consulta», desaparecen."
+        ]
+      },
+      {
+        "h": "Para qué los usamos",
+        "p": [
+          "Para que puedas tener una cuenta y entrar en ella, sobre la base de la relación contractual que aceptas al registrarte.",
+          "Para enviarte los correos imprescindibles: confirmación de la cuenta, cambio de contraseña y cambio de dirección. No enviamos publicidad por correo.",
+          "Para aplicar los límites de uso y evitar abusos, sobre la base de nuestro interés legítimo en que el servicio siga funcionando para todos."
+        ]
+      },
+      {
+        "h": "Con quién se comparten",
+        "p": [
+          "Cloudflare, Inc. aloja la aplicación y la base de datos. Los servidores están en su red global y la empresa está acogida al marco de transferencias internacionales vigente.",
+          "Google (Gemini API) procesa el texto de tus consultas para generar las respuestas. Importante: mientras usemos el nivel gratuito de esa API, Google puede utilizar el contenido de las consultas para mejorar sus modelos. No escribas en el chat datos personales ni información que no quieras que salga de aquí.",
+          "Resend envía los correos de confirmación y recuperación. Solo recibe tu dirección y el contenido del mensaje.",
+          "Scryfall y Commander Spellbook aportan datos de cartas y combos. Reciben el nombre de la carta que consultas, nunca datos tuyos.",
+          "No vendemos tus datos a nadie ni los cedemos con fines comerciales."
+        ]
+      },
+      {
+        "h": "Cookies",
+        "p": [
+          "Usamos dos cookies, ambas necesarias para que la herramienta funcione, y por eso no te pedimos permiso para ellas: una mantiene tu sesión iniciada y otra recuerda en qué idioma prefieres ver la web.",
+          "No usamos cookies de analítica ni de seguimiento.",
+          "Si en el futuro incorporamos publicidad, te pediremos consentimiento antes de instalar ninguna cookie publicitaria, y podrás rechazarla."
+        ]
+      },
+      {
+        "h": "Cuánto tiempo los guardamos",
+        "p": [
+          "Los datos de tu cuenta, mientras la mantengas abierta. Si la das de baja desde Ajustes, se borran de inmediato junto con tus sesiones y enlaces pendientes.",
+          "Los contadores de uso se borran solos al cambiar el día.",
+          "Los enlaces de confirmación caducan a las 24 horas y los de contraseña a la hora."
+        ]
+      },
+      {
+        "h": "Tus derechos",
+        "p": [
+          "Puedes acceder a tus datos, corregirlos, borrarlos, limitar su tratamiento, oponerte a él y pedir que te los entreguemos en un formato reutilizable.",
+          "Buena parte de eso lo puedes hacer tú mismo desde Ajustes: cambiar el nombre de usuario, el correo, la contraseña o borrar la cuenta entera.",
+          "Para lo demás, escríbenos a hola@mtg-juez.com. Y si crees que no hemos hecho las cosas bien, puedes reclamar ante la Agencia Española de Protección de Datos (www.aepd.es)."
+        ]
+      },
+      {
+        "h": "Menores",
+        "p": [
+          "Para crear una cuenta hay que tener 14 años o más. Si detectamos una cuenta de alguien menor de esa edad, la eliminaremos."
+        ]
+      }
+    ]
+  },
+
+  "terminos": {
+    "titulo": "Términos de uso",
+    "actualizado": "Última actualización: septiembre de 2026",
+    "intro": "Al usar Juez aceptas lo que hay aquí escrito. Es corto a propósito.",
+    "secciones": [
+      {
+        "h": "Qué es esto",
+        "p": [
+          "Juez es una herramienta de consulta de reglas y construcción de mazos de Magic: The Gathering. Responde apoyándose en las Comprehensive Rules oficiales y en datos públicos de cartas.",
+          "Titular del servicio: [NOMBRE Y APELLIDOS O RAZÓN SOCIAL], NIF [NIF], domicilio en [DIRECCIÓN COMPLETA], contacto hola@mtg-juez.com."
+        ]
+      },
+      {
+        "h": "No es una herramienta oficial",
+        "p": [
+          "Juez no está afiliado, aprobado ni patrocinado por Wizards of the Coast. Es contenido de fans no oficial, permitido bajo la Fan Content Policy de Wizards.",
+          "Parte del material utilizado es propiedad de Wizards of the Coast. ©Wizards of the Coast LLC. Los datos de cartas proceden de Scryfall y los combos de Commander Spellbook."
+        ]
+      },
+      {
+        "h": "Hasta dónde puedes fiarte",
+        "p": [
+          "Las respuestas las genera un modelo de lenguaje. Puede equivocarse, y se equivoca sobre todo en los casos raros. Por eso cada afirmación lleva su número de regla y puedes abrirlo para leer el texto oficial: esa comprobación es tuya.",
+          "En una partida de competición manda el juez humano. Juez no sustituye a un árbitro ni sirve para reclamar nada en un torneo.",
+          "Los precios de las cartas los aporta Scryfall y cambian a diario. Son orientativos y no constituyen una oferta de venta.",
+          "No respondemos de las decisiones que tomes basándote en las respuestas, ni del dinero que gastes en cartas."
+        ]
+      },
+      {
+        "h": "Tu cuenta",
+        "p": [
+          "Eres responsable de tu contraseña y de lo que se haga desde tu cuenta. Si crees que alguien ha entrado en ella, cambia la contraseña: al hacerlo se cierran todas las sesiones abiertas.",
+          "Una cuenta es para una persona. No la compartas.",
+          "Puedes darte de baja cuando quieras desde Ajustes. Nosotros podemos cerrar cuentas que usen el servicio para saltarse los límites, sobrecargarlo o hacer algo ilegal."
+        ]
+      },
+      {
+        "h": "Límites de uso",
+        "p": [
+          "Cada plan tiene un número de consultas diarias. Una consulta de reglas cuenta una unidad y construir un mazo cuenta tres, porque cuesta el triple de procesar.",
+          "Hay además un límite global para toda la herramienta. Si se alcanza, el servicio deja de responder hasta el día siguiente aunque a ti te quede saldo.",
+          "El servicio se ofrece tal cual y puede fallar, cambiar o interrumpirse. Es un proyecto pequeño, no una infraestructura con garantía de disponibilidad."
+        ]
+      },
+      {
+        "h": "Qué no puedes hacer",
+        "p": [
+          "Automatizar peticiones, revenderlo, o usarlo de forma que degrade el servicio para los demás.",
+          "Intentar extraer las Comprehensive Rules completas o los datos de cartas de forma masiva. Para eso están las fuentes originales, que son públicas y gratuitas."
+        ]
+      },
+      {
+        "h": "Cambios y ley aplicable",
+        "p": [
+          "Podemos cambiar estos términos. Si el cambio es relevante, lo avisaremos en la aplicación.",
+          "Se aplica la legislación española. Si eres consumidor, conservas los derechos que te reconoce la normativa de tu país de residencia."
+        ]
+      }
+    ]
+  }
+}

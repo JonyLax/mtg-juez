@@ -249,3 +249,18 @@ footer a:hover{color:var(--gold-hi)}
 }
 /* La portada no espera a nada: se ve desde el primer instante */
 .portada [data-aparece]{opacity:1; transform:none}
+
+/* ── páginas legales ────────────────────────────────────── */
+.legal-txt h2{
+  font-size:20px; margin:38px 0 12px; color:var(--gold-hi);
+}
+.legal-txt h2:first-child{margin-top:0}
+.legal-txt p{color:var(--muted); margin-bottom:14px}
+.legal-txt strong{color:var(--parch); font-weight:600}
+.aviso-idioma{
+  border:1px solid rgba(201,162,39,.35); border-radius:6px; padding:13px 16px;
+  margin-bottom:28px; font-size:14.5px; color:var(--gold-hi); font-style:italic;
+}
+.rellenar{
+  color:#E0A06A; border-bottom:1px dashed #E0A06A;
+}

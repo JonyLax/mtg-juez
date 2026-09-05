@@ -15,7 +15,7 @@ run_worker_first = true
 [[d1_databases]]
 binding = "DB"
 database_name = "juez"
-database_id = "4925068d-13da-44ec-abe6-e4db292ae81b"
+database_id = "PEGA_AQUI_EL_ID_DE_TU_BASE_DE_DATOS"
 
 # Techo diario de toda la instalacion, en unidades (reglas=1, mazo=3). Es lo que
 # protege tu clave de Gemini de que un dia bueno la agote para todos. Subelo
@@ -27,4 +27,6 @@ GLOBAL_DIARIO = "400"
 #   GEMINI_API_KEY  clave de Google AI Studio
 #   AUTH_PEPPER     cadena larga y aleatoria, la pimienta de las contrasenas
 #   RESEND_API_KEY  clave de Resend para enviar correos
-#   MAIL_FROM       remitente, p.ej. Juez <juez@mtg-juez.com>
+#   MAIL_FROM       remitente, p.ej. Juez <no-reply@send.mtg-juez.com>
+#   MAIL_REPLY_TO   opcional: hola@mtg-juez.com, para que las respuestas
+#                   lleguen al buzon en vez de perderse en el subdominio

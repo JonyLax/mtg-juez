@@ -14,7 +14,12 @@ const POR_DEFECTO = "en";
 const COOKIE_IDIOMA = "juez_lang";
 
 /** Rutas que la web comercial sirve en cada idioma. */
-const PAGINAS = { "": "index.html", precios: "precios.html" };
+const PAGINAS = {
+  "": "index.html",
+  precios: "precios.html",
+  privacidad: "privacidad.html",
+  terminos: "terminos.html",
+};
 
 export function esSubdominioChat(hostname) {
   return hostname.startsWith("chat.");
